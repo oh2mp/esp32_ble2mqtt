@@ -3,7 +3,7 @@
 ### An ESP32 based gateway that listens BLE beacons and sends the data via MQTT
 
 Web-configurable BLE data collector that sends data to a MQTT broker. In my own configuration I have
-Mosquitto as a broker and InfluxDB + Telegraf with MQTT plugin. See [EXAMPLES.md](EXAMPLES.md). 
+Mosquitto as a broker and InfluxDB + Telegraf with MQTT plugin. See [CONFIG_EXAMPLES.md](CONFIG_EXAMPLES.md). 
 
 This software sends data as JSON to the broker. The data is specified to be compact to avoid eg. high bills
 when this is used with a mobile internet with some data plan. See [DATAFORMATS.md](DATAFORMATS.md)
@@ -50,6 +50,7 @@ See [FORMATS.md](FORMATS.md).
 Optionally an RGB LED can be connected to the board. It acts as a status indicator. At boot the LED
 shows a short color effect to see that it's working. Colors and meanings in operating mode:
 
+- off = nothing happening just now
 - cyan = BLE scanning active, but no beacons heard yet
 - blue = BLE beacon(s) heard
 - purple = end of BLE scanning
