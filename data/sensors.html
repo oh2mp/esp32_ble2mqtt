@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" href="style.css">
+<script type="text/javascript">
+function moveup(n) {
+    if (n == 0) return;
+
+    var prevmac = document.getElementById("mac"+(n-1)).innerHTML;
+    var prevsname = document.getElementById("sname"+(n-1)).value;
+    var prevsaddr = document.getElementById("saddr"+(n-1)).value;
+
+    document.getElementById("mac"+(n-1)).innerHTML = document.getElementById("mac"+n).innerHTML;
+    document.getElementById("mac"+n).innerHTML = prevmac;
+    document.getElementById("sname"+(n-1)).value = document.getElementById("sname"+n).value;
+    document.getElementById("sname"+n).value = prevsname;
+    document.getElementById("saddr"+(n-1)).value = document.getElementById("saddr"+n).value;
+    document.getElementById("saddr"+n).value = prevsaddr;
+
+}
+</script>
+</head>
+<body>
+<br />
+<form method="POST" action="/savesens">
+<table id="t"><tbody>
+###TABLEROWS###
+</tbody></table>
+<br />
+<table><tbody>
+<tr><td class="even"><input type="submit" value="save"></td>
+<td class="even"><a class="fakebutton" href="./">cancel</a></td></tr>
+<tr><td colspan=2>To forget a tag, erase<br />the name and save
+<input type="hidden" name="counter" value="###COUNTER###">
+</td></tr>
+</tbody></table>
+</form>
+</body>
+<script type="text/javascript">
+   var arrow = '<svg style="border: 0px solid blue;" width="24" height="32" version="1.1" xmlns="http://www.w3.org/2000/svg">'
+              +'<polygon points="0,24 12,0 24,24 16,24 16,32 8,32 8,24" fill="#0f4c75" stroke="#fff" stroke-opacity="0.3" /></svg>';
+   var t = document.getElementById("t");
+   t.innerHTML = t.innerHTML.replace(/↑/g,arrow);
+</script>
+</html>
+

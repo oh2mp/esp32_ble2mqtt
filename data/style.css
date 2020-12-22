@@ -1,0 +1,141 @@
+body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    margin: auto;
+    background: #121212;
+    color: #ffffff;
+    font-size: 18px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+small {
+    font-size: 12px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 24px;
+}
+h3 {
+    text-align: center;
+    font-size: 18px;
+}
+
+hr {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+input[type=text] {
+   color: #03dac6;
+   background: #333333;
+   font-size: 24px;
+   margin-top: 10px;
+   border: 1px solid rgba(255,255,255,0.3);
+   border-radius: 5px;
+   padding: 5px;
+   width: 90%;
+   box-shadow: 2px 2px 4px #333333;
+}
+
+input:focus { 
+    outline: none !important;
+    border-color: #719ECE;
+    box-shadow: 0 0 10px #719ECE;
+    background: #505050;
+}
+
+input[type=submit] {
+   display: inline-block;
+   position: relative;
+   color: #fffffa;
+   background: #0f4c75;
+   text-shadow: 1px 1px #333333;
+   font-size: 22px;
+   line-height: 24px;
+   width: 80%;
+   padding: 5px 0px 5px 0px;
+   margin: 0;
+   border: 1px solid rgba(255,255,255,0.3);
+   box-shadow: 2px 2px 4px #333333;
+   border-radius: 5px;
+}
+
+.fakebutton {
+   display: inline-block;
+   position: relative;
+   color: #fffffa;
+   font-size: 22px;
+   background: #0f4c75;
+   text-shadow: 1px 1px #333333;
+   width: 80%;
+   line-height: 24px;
+   padding: 5px 0px 5px 0px;
+   margin 0;
+   text-decoration: none;
+   border: 1px solid rgba(255,255,255,0.3);
+   border-radius: 5px;
+   box-shadow: 2px 2px 4px #333333;
+}
+
+table {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+td {
+   margin: 0;
+   text-align: center;
+   padding: 5px 0px 0px 0px; 
+   position: relative; 
+   bottom: 0px;
+}
+
+svg {
+   padding: 0px; 
+   margin: 5px 0 0 0; 
+   bottom: 0px; 
+   position: relative;
+}
+
+.even {
+   display: table-cell;
+   width: 50%;
+}
+
+.wifiinfo {
+   width: 80%;
+   margin: 0 10% 10% 10%;
+   border: 1px solid #0f4c75;
+   border-radius: 5px;
+   border-collapse: collapse;
+}
+.wifiinfo td {
+   border: 1px solid #0f4c75;
+   width: 50%;
+   padding: 5px;
+}
+
+@media only screen and (max-width: 767px) {
+    input[type=text] {
+        width: 90%;
+    }
+}
+
+@media only screen and (min-device-width : 768px) and (max-device-width: 1024px) {
+    input[type=text] {
+        width: 90%;
+    }
+    body {
+        width: 90%;
+        font-size: 22px;
+    }
+}
+
+@media only screen and (min-width: 1024px) {
+    body {
+        width: 320px;
+    }
+}
+

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<br />
+<form method="POST" action="/savemqtt">
+<table>
+<tr><td><b>MQTT broker settings</b><hr></td></tr>
+
+<tr><td>host:port <small>or</small> ip:port<br />
+<input type="text" name="hostport" maxlength="127" pattern=".*:[0-9]{1,5}$" value="###HOSTPORT###"></td></tr>
+<tr><td><br />username:password<br />
+<input type="text" name="userpass" maxlength="63" value="###USERPASS###"></td></tr>
+<tr><td><br />topic prefix<br />
+<input type="text" name="topicbase" maxlength="256" value="###TOPICBASE###"></td></tr>
+<tr><td><br />Send interval in minutes<br />
+<input type="text" name="interval" pattern="[0-9]{0,4}" value="###INTERVAL###"></td></tr>
+</table>
+<br />
+<table>
+<tr><td class="even"><input type="submit" value="save"></td>
+<td class="even"><a class="fakebutton" href="./">cancel</a></td></tr>
+
+</table>
+</form>
+</body>
+</html>
+

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+<br />
+<form method="POST" action="/savewifi">
+<table>
+<tr style="display: table-row"><td>Own hostname</td></tr>
+<tr style="display: table-row"><td><input type="text" name="myhostname" maxlength="64" value="###MYHOSTNAME###"></td></tr>
+<tr style="display: table-row"><td><hr /></td></tr>
+</table>
+<table>
+###TABLEROWS###
+<tr style="display: table-row"><td colspan=2><hr /></td></tr>
+<tr style="display: table-row"><td colspan=2><b><i>Add new</i></b></td></tr>
+<tr style="display: table-row"><td>SSID</td><td><input type="text" name="ssid" maxlength="32" value=""></td></tr>
+<tr style="display: table-row"><td>PASS</td><td><input type="text" name="pass" maxlength="32" value=""></td></tr>
+</table>
+<br />
+<table>
+<tr><td class="even"><input type="submit" value="save"></td>
+<td class="even"><a class="fakebutton" href="./">cancel</a></td></tr>
+<tr><td colspan=2>To remove a connection,<br />erase the SSID and save
+<input type="hidden" name="counter" value="###COUNTER###">
+</td></tr>
+</table>
+</form>
+</body>
+</html>
+

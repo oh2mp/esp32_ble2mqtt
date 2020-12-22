@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style type="text/css">
+html, body {
+   background: black;
+   color: black;
+   padding: 0;
+   margin: 0;
+   height: 100%;
+}
+.cont {
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+.anim {
+   color: white; 
+   font-size: 256px;
+   height: 256px;
+   width: 256px;
+   line-height: 208px;
+   text-align: center;
+   justify-content: center;
+   vertical-align: middle;
+   animation-duration: 2.5s;
+   animation-name: roll;
+}
+@keyframes roll {
+   from { transform: rotate(1500deg) scale(0.2); color: black; }
+   to   { transform: rotate(0deg) scale(1); color: white; }
+}
+</style>
+</head>
+<body>
+<div class="cont">
+<div class="anim">&#x2714;</div>
+</div>
+</body>
+</html>
