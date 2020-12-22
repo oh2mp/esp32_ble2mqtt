@@ -426,7 +426,7 @@ void mqtt_send() {
                     voltage = ((double)foo / 32  + 1600);
                     pressure = ((unsigned short)tagdata[curr_tag][12]<<8) + (unsigned short)tagdata[curr_tag][13] + 50000;
 
-                    sprintf(json,"{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"p\":%d}",
+                    sprintf(json,"{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"ap\":%d}",
                             tagtype[curr_tag],int(temperature*.05),int((float)humidity*.0025), voltage, int(pressure/100));
                 }
             }
