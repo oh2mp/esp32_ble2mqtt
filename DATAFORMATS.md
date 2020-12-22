@@ -17,6 +17,8 @@ supported at the moment are:
 | TAG_ENERGY | 3 | OH2MP energy meter beacon |
 | TAG_WATER  | 4 | OH2MP water gauge beacon |
 | TAG_THCPL  | 5 | OH2MP thermocouple beacon |
+| TAG_DS1820 | 6 | 1wire DS18x20 based thermometer |
+| TAG_DHT    | 7 | DHT based thermometer/hygrometer |
 
 These same numbers are used internally in [OH2MP Smart RV](https://github.com/oh2mp/esp32_smart_rv)
 
