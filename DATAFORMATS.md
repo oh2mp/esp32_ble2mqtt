@@ -1,6 +1,7 @@
 # Dataformats used with OH2MP ESP32 BLE2MQTT
 
-#### All of these should stay as they are specified, but they _may_ change.
+#### All of these should stay as they are specified, but they _may_ change. 
+Some beacon types and data fields are already specified for future use.
 
 ------------
 
@@ -23,8 +24,7 @@ These same numbers are used internally in [OH2MP Smart RV](https://github.com/oh
 
 ### Fields in JSON messages
 
-These field names are chosen so that they are short to make messages more compact. Some fields are
-already specified for future use.
+These field names are chosen so that they are short to make messages more compact.
 
 | Fieldname  | Unit    | Description |
 | ---------- | ------- | ----------- |
