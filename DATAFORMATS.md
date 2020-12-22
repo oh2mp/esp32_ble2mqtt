@@ -6,6 +6,8 @@ In every MQTT packet an information about the beacon type is sent. It is just nu
 supported at the moment are:
 
 
+| Name       | Number | Description |
+| ---------- | ------ | ----------- |
 | TAG_RUUVI  | 1 | Ruuvi tag |
 | TAG_MIJIA  | 2 | Xiaomi Mijia Thermometer 2 |
 | TAG_ENERGY | 3 | OH2MP energy meter beacon |
