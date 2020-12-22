@@ -32,8 +32,36 @@ to your InfluxDB.
   skip_database_creation = true
 
   username = "telegraf"
-  password = "set_your_telegraf_influxdb_user_password_here"
+  password = "telegraf_influxdb_user_password_here"
 
   insecure_skip_verify = true
+
+```
+
+#### MQTT input section
+
+It's assumed here that you have added user `telegraf` to Mosquitto's pwfile. This subscribes to all
+topics and sets `type` parameter in data as a tag. See parameters etc. from [DATAFORMATS.md](DATAFORMATS.md).
+
+The full documentation of the MQTT Consumer input plugin is 
+[available at influxdata's github](https://github.com/influxdata/telegraf/blob/release-1.17/plugins/inputs/mqtt_consumer/README.md)
+
+
+```
+[[inputs.mqtt_consumer]]
+    servers = ["tcp://127.0.0.1:1883"]
+    topics = ["#"]
+
+    tag_keys = ["type"]
+
+    topic_tag = "sensor"
+    qos = 0
+
+    username = "telegraf"
+    password = "telegraf_password_from_mosquitto_pwfile"
+
+    data_format = "json"
+    name_override = "sensors"
+    json_strict = false 
 
 ```
