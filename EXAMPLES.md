@@ -3,7 +3,9 @@
 ### [Mosquitto](https://mosquitto.org/)
 
 With this configuration Mosquitto listens its default port tcp/1883
+
 Full documentation for `mosquitto.conf` is [available at mosquitto.org](https://mosquitto.org/man/mosquitto-conf-5.html)
+
 Remember to setup pwfile for passwords too.
 
 
@@ -14,3 +16,24 @@ socket_domain ipv4
 ```
 
 ### [Telegraf](https://docs.influxdata.com/telegraf/v1.17/)
+
+#### InfluxDB output section
+
+It's assumed here that you have set up database `home` and user `telegraf` with appropriate permissions
+to your InfluxDB.
+
+
+```
+[[outputs.influxdb]]
+  urls = ["https://127.0.0.1:8086"]
+
+  database = "home"
+  exclude_database_tag = false
+  skip_database_creation = true
+
+  username = "telegraf"
+  password = "set_your_telegraf_influxdb_user_password_here"
+
+  insecure_skip_verify = true
+
+```
