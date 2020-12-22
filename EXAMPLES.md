@@ -40,8 +40,12 @@ to your InfluxDB.
 
 #### MQTT input section
 
-It's assumed here that you have added user `telegraf` to Mosquitto's pwfile. This subscribes to all
-topics and sets `type` parameter in data as a tag. See parameters etc. from [DATAFORMATS.md](DATAFORMATS.md).
+It's assumed here that you have added user `telegraf` to Mosquitto's pwfile. 
+
+This example configuration subscribes to all topics and sets `type` parameter in data as a tag. 
+See parameters etc. from [DATAFORMATS.md](DATAFORMATS.md).
+
+The MQTT topic is inserted as tag `sensor` to InfluxDB
 
 The full documentation of the MQTT Consumer input plugin is 
 [available at influxdata's github](https://github.com/influxdata/telegraf/blob/release-1.17/plugins/inputs/mqtt_consumer/README.md)
