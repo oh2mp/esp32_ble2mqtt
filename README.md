@@ -11,7 +11,7 @@ when this is used with a mobile internet with some data plan. See [DATAFORMATS.m
 BLE beacons that are currently supported:
 
 - [Ruuvi tag](https://ruuvi.com/) (Data format V5 aka RAWv2 only)
-- [Xiaomi Mijia Bluetooth Thermometer 2 with ATC_MiThermometr firmware]((https://github.com/atc1441/ATC_MiThermometer) (stock firmware not supported)
+- [Xiaomi Mijia Bluetooth Thermometer 2 with ATC_MiThermometr firmware](https://github.com/atc1441/ATC_MiThermometer) (stock firmware not supported)
 - [ESP32 Water sensor](https://github.com/oh2mp/esp32_watersensor)
 - [ESP32 Energy meter](https://github.com/oh2mp/esp32_energymeter)
 - [ESP32 MAX6675 beacon for thermocouples for gas fridge](https://github.com/oh2mp/esp32_max6675_beacon)
