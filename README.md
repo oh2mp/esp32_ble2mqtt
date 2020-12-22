@@ -8,6 +8,11 @@ Mosquitto as a broker and InfluxDB + Telegraf with MQTT plugin. See [CONFIG_EXAM
 This software sends data as JSON to the broker. The data is specified to be compact to avoid eg. high bills
 when this is used with a mobile internet with some data plan. See [DATAFORMATS.md](DATAFORMATS.md)
 
+The idea for this is home or RV use, not scientific environment. Because of that eg. the temperatures are 
+only with 0.1°C precision and eg. acceleration sensors of Ruuvi tags are simply ignored. It's not very
+important to know the acceleration while the tag is in a fridge.
+
+
 BLE beacons that are currently supported:
 
 - [Ruuvi tag](https://ruuvi.com/) (Data format V5 aka RAWv2 only)

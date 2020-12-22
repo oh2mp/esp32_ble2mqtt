@@ -42,7 +42,7 @@ already specified for future use.
 
 --------------
 
-### An example JSON message from a Ruuvi tag:
+### An example JSON message from a Ruuvi tag data:
 
 ```
 {"type":1,"t":243,"rh":32,"bu":2821,"ap":1003}
