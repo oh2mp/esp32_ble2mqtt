@@ -2,6 +2,8 @@
 
 #### All of these should stay as they are specified, but they _may_ change.
 
+------------
+
 ### Beacon type
 
 In every MQTT packet an information about the beacon type is sent. It is just numerical and the types
@@ -16,6 +18,8 @@ supported at the moment are:
 | TAG_THCPL  | 5 | OH2MP thermocouple beacon |
 
 These same numbers are used internally in [OH2MP Smart RV](https://github.com/oh2mp/esp32_smart_rv)
+
+------------
 
 ### Fields in JSON messages
 
@@ -34,6 +38,7 @@ already specified for future use.
 | u          | mV      | electric voltage |
 | i          | mA      | electric current |
 | p          | mW      | electric power |
+| m          | g       | mass (or weight in spoken language) |
 
 --------------
 
