@@ -30,7 +30,7 @@ These field names are chosen so that they are short to make messages more compac
 
 | Fieldname  | Unit    | Description |
 | ---------- | ------- | ----------- |
-| t          | 1/10 °C | temperature in "centiCelsius" |
+| t          | 1/10 °C | temperature in deciCelsius |
 | rh         | %       | relative humidity |
 | ap         | hPa     | athmospheric pressure |
 | bu         | mV      | battery voltage |
