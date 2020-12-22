@@ -78,7 +78,7 @@ behavior of the LED is similar like in operating mode.
 
 WiFi AP is not listening yet at the scanning period. After the LED starts illuminating green, 
 connect to WiFi **ESP32 BLE2MQTT**, accept that there's no internet connection
-and take your browser to !http://192.168.4.1/
+and take your browser to http&#8203;://192.168.4.1/
 
 The web GUI should be self explanatory. 
 
