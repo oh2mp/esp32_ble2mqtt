@@ -77,7 +77,7 @@ In the start of portal mode the ESP32 is scanning 11 seconds for beacons. During
 behavior of the LED is similar like in operating mode.
 
 WiFi AP is not listening yet at the scanning period. After the LED starts illuminating green, 
-connect to WiFi **ESP32 BLE2MQTT**, accept that there's no internet connection
+connect to WiFi **ESP32&nbsp;BLE2MQTT**, accept that there's no internet connection
 and take your browser to `http://192.168.4.1/`
 
 The web GUI should be self explanatory. 
