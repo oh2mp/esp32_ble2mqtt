@@ -69,10 +69,8 @@ PubSubClient client(wificlient);
 
 WebServer server(80);
 IPAddress apIP(192,168,4,1);                     // portal ip address
-const char my_ip[] PROGMEM = "192.168.4.1";      // text to show for ip address
 const char my_ssid[] PROGMEM = "ESP32 BLE2MQTT"; // AP SSID
 uint32_t portal_timer = 0;
-uint32_t request_timer = 0;
 
 char heardtags[MAX_TAGS][18];
 uint8_t heardtagtype[MAX_TAGS];
@@ -819,10 +817,6 @@ void httpBoot() {
     server.send(200, "text/html; charset=UTF-8", html);
     delay(1000);
     
-    timeval epoch = {0, 0}; // clear clock
-    const timeval *tv = &epoch;
-    settimeofday(tv, NULL);
-
     ESP.restart();
 }
 /* ------------------------------------------------------------------------------- */
