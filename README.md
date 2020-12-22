@@ -5,12 +5,12 @@
 Web-configurable BLE data collector that sends data to a MQTT broker. In my own configuration I have
 Mosquitto as a broker and InfluxDB + Telegraf with MQTT plugin. See [CONFIG_EXAMPLES.md](CONFIG_EXAMPLES.md). 
 
-This software sends data as JSON to the broker. The data is specified to be compact to avoid eg. high bills
+This software sends data as JSON to the broker. The data is specified to be compact to avoid high bills
 when this is used with a mobile internet with some data plan. See [DATAFORMATS.md](DATAFORMATS.md)
 
 The idea for this is home or RV use, not scientific environment. Because of that eg. the temperatures are 
-only with 0.1°C precision and eg. acceleration sensors of Ruuvi tags are simply ignored. It's not very
-important to know the acceleration while the tag is in a fridge.
+only with 0.1°C precision and acceleration sensors of Ruuvi tags are simply ignored. It's not very
+important to know the acceleration while the tag is in a fridge and we want to keep data compact.
 
 
 BLE beacons that are currently supported:
