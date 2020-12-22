@@ -42,3 +42,11 @@ already specified for future use.
 
 --------------
 
+### An example JSON message from a Ruuvi tag:
+
+```
+{"type":1,"t":243,"rh":32,"bu":2821,"ap":1003}
+```
+
+Here we see that type is 1 meaning that this is a Ruuvi tag. The temperature is 24.3°C, relative humidity 32%,
+battery voltage 2.821 volts and athmospheric pressure 1003 hPa.
