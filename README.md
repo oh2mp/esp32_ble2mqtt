@@ -14,7 +14,7 @@ BLE beacons that are currently supported:
 - [Xiaomi Mijia Bluetooth Thermometer 2 with ATC_MiThermometr firmware](https://github.com/atc1441/ATC_MiThermometer) (stock firmware not supported)
 - [ESP32 Water sensor](https://github.com/oh2mp/esp32_watersensor)
 - [ESP32 Energy meter](https://github.com/oh2mp/esp32_energymeter)
-- [ESP32 MAX6675 beacon for thermocouples for gas fridge](https://github.com/oh2mp/esp32_max6675_beacon)
+- [ESP32 MAX6675 beacon for thermocouples](https://github.com/oh2mp/esp32_max6675_beacon)
 
 This is partly based on the same code as [OH2MP ESP32 Smart RV](https://github.com/oh2mp/esp32_smart_rv)
 and [OH2MP ESP32 Ruuvicollector](https://github.com/oh2mp/esp32_ruuvicollector)
@@ -27,7 +27,7 @@ and [OH2MP ESP32 Ruuvicollector](https://github.com/oh2mp/esp32_ruuvicollector)
 - [Arduino IDE](https://www.arduino.cc/en/main/software)
 - [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin/)
 
-Choose correct ESP32 board and change partitioning setting. **Tools -> Partition Scheme -> Huge APP(3MB No OTA)**
+Choose correct ESP32 board and change partitioning setting:<br /> **Tools -> Partition Scheme -> Huge APP(3MB No OTA)**
 
 Use the filesystem uploader tool to upload the contents of data library. It contains the html pages for
 the configuring portal.
