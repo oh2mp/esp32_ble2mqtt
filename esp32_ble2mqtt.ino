@@ -352,7 +352,11 @@ void setup() {
 
     loadWifis();
     client.setServer(mqtt_host, mqtt_port);
-        
+
+    // https://github.com/espressif/arduino-esp32/issues/2537#issuecomment-508558849
+    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+    WiFi.setHostname(myhostname);
+    
     // Reset real time clock
     timeval epoch = {0, 0};
     const timeval *tv = &epoch;
@@ -636,10 +640,6 @@ void httpWifi() {
         file.readBytesUntil('\n', myhostname, sizeof(myhostname));
         file.close();
     }
-
-    // https://github.com/espressif/arduino-esp32/issues/2537#issuecomment-508558849
-    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
-    WiFi.setHostname(myhostname);
 
     html.replace("###TABLEROWS###", tablerows);
     html.replace("###COUNTER###", String(counter));
