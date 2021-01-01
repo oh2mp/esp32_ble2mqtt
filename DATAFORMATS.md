@@ -42,14 +42,15 @@ These field names are chosen so that they are short to make messages more compac
 | i          | mA      | electric current |
 | p          | mW      | electric power |
 | m          | g       | mass (or weight in spoken language) |
+| s          | dBm     | signal strength as RSSI, abs() value.
 
 --------------
 
 ### An example JSON message from a Ruuvi tag data:
 
 ```
-{"type":1,"t":243,"rh":32,"bu":2821,"ap":1003}
+{"type":1,"t":243,"rh":32,"bu":2821,"ap":1003,"s":42}
 ```
 
 Here we see that type is 1 meaning that this is a Ruuvi tag. The temperature is 24.3°C, relative humidity 32%,
-battery voltage 2.821 volts and athmospheric pressure 1003 hPa.
+battery voltage 2.821 volts and athmospheric pressure 1003 hPa. RSSI is -42 dBm.

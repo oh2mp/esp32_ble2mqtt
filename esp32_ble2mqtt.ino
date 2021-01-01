@@ -46,13 +46,17 @@ const char type_name[6][8] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Wat
 char tagdata[MAX_TAGS][32];      // space for raw tag data unparsed
 char tagname[MAX_TAGS][24];      // tag names
 char tagmac[MAX_TAGS][18];       // tag macs
+int  tagrssi[MAX_TAGS];          // RSSI for each tag
+
 uint8_t tagtype[MAX_TAGS];       // "cached" value for tag type
 uint8_t tagcount = 0;            // total amount of known tags
 uint8_t scanning = 0;            // flag for scantime
 int interval = 1;
 time_t lastpublish = 0;
 
-char myhostname[64] = "esp32-ble2mqtt"; // default
+// Default hostname base. Last 3 octets of MAC are added as hex.
+// The hostname can be changed explicitly from the portal.
+char myhostname[64] = "esp32-ble2mqtt-";
 
 TaskHandle_t mqtttask = NULL;
 
@@ -143,7 +147,9 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         }
         // Copy the payload to tagdata
         memcpy(tagdata[taginx],payload,32); 
-        
+
+        tagrssi[taginx] = advDev.getRSSI();
+
         Serial.printf("BLE callback: payload=");
         for (uint8_t i = 0; i < 32; i++) {
              Serial.printf("%02x",payload[i]);
@@ -306,6 +312,13 @@ void setup() {
 
     pinMode(BUTTON, INPUT_PULLUP);
 
+    // Append last 3 octets of MAC to the default hostname
+    uint8_t mymac[6];
+    esp_read_mac(mymac, (esp_mac_type_t)0); // 0:wifi station, 1:wifi softap, 2:bluetooth, 3:ethernet
+    char mac_end[8];
+    sprintf(mac_end,"%02x%02x%02x",mymac[3],mymac[4],mymac[5]);
+    strcat(myhostname,mac_end);
+
     ledcSetup(LED_R, 5000, 8);
     ledcAttachPin(LED_R_PIN, LED_R);
     ledcSetup(LED_G, 5000, 8);
@@ -319,6 +332,7 @@ void setup() {
         memset(tagname[i],0,sizeof(tagname[i]));
         memset(tagdata[i],0,sizeof(tagdata[i]));
         memset(tagmac[i],0,sizeof(tagmac[i]));
+        tagrssi[i] = 0;
         tagtype[i] = 0;
     }
     
@@ -410,7 +424,8 @@ void mqtt_send() {
     int voltage;
     uint32_t wh;
     uint32_t wht;
-
+    boolean published = false;
+    
     WiFi.mode(WIFI_STA);
 
     for (uint8_t curr_tag = 0; curr_tag < MAX_TAGS; curr_tag++) {
@@ -424,22 +439,24 @@ void mqtt_send() {
                     voltage = ((double)foo / 32  + 1600);
                     pressure = ((unsigned short)tagdata[curr_tag][12]<<8) + (unsigned short)tagdata[curr_tag][13] + 50000;
 
-                    sprintf(json,"{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"ap\":%d}",
-                            tagtype[curr_tag],int(temperature*.05),int((float)humidity*.0025), voltage, int(pressure/100));
+                    sprintf(json,"{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"ap\":%d,\"s\":%d}",
+                            tagtype[curr_tag],int(temperature*.05),int((float)humidity*.0025),
+                            voltage, int(pressure/100), abs(tagrssi[curr_tag]));
                 }
             }
             // Other tags --------------------------------------------------------------------------------------
             // water gauge
             if (tagtype[curr_tag] == TAG_WATER) {
                 if (tagdata[curr_tag][0] != 0) {                    
-                    sprintf(json,"{\"type\":%d,\"lv\":%d}",tagtype[curr_tag],(unsigned int)tagdata[curr_tag][10]);
+                    sprintf(json,"{\"type\":%d,\"lv\":%d,\"s\":%d}",
+                            tagtype[curr_tag],(unsigned int)tagdata[curr_tag][10],abs(tagrssi[curr_tag]));
                 }
             }
             // flame thermocouple
             if (tagtype[curr_tag] == TAG_THCPL) {
                 // get the temperature
                 foo = (((unsigned short)tagdata[curr_tag][10] << 8) + (unsigned short)tagdata[curr_tag][9]) >> 2;
-                sprintf(json,"{\"type\":%d,\"t\":%d}",tagtype[curr_tag],foo*10);
+                sprintf(json,"{\"type\":%d,\"t\":%d,\"s\":%d}",tagtype[curr_tag],foo*10,abs(tagrssi[curr_tag]));
             }
             // energy meter pulse counter
             if (tagtype[curr_tag] == TAG_ENERGY) {
@@ -450,7 +467,7 @@ void mqtt_send() {
                     wht = (((uint32_t)tagdata[curr_tag][12] << 24) + ((uint32_t)tagdata[curr_tag][11] << 16) 
                            + ((uint32_t)tagdata[curr_tag][10] << 8) + (uint32_t)tagdata[curr_tag][9]);
                       
-                    sprintf(json,"{\"type\":%d,\"e\":%d,\"et\":%d}",tagtype[curr_tag],wh,wht);
+                    sprintf(json,"{\"type\":%d,\"e\":%d,\"et\":%d,\"s\":%d}",tagtype[curr_tag],wh,wht,abs(tagrssi[curr_tag]));
                 }
             }
             // Xiaomi Mijia thermometer with ATC_MiThermometer custom firmware by atc1441
@@ -460,8 +477,8 @@ void mqtt_send() {
                     // sprintf(json,"%.1f\x29",temperature*0.1); // 0x29 = degree sign in the bigfont
                     humidity = (unsigned short)tagdata[curr_tag][12];
                     voltage = ((short)tagdata[curr_tag][14]<<8) | (unsigned short)tagdata[curr_tag][15];
-                    sprintf(json,"{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d}",
-                            tagtype[curr_tag],int(temperature),int(humidity),int(voltage));
+                    sprintf(json,"{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"s\":%d}",
+                            tagtype[curr_tag],int(temperature),int(humidity),int(voltage),abs(tagrssi[curr_tag]));
                 }              
             }
             if (json[0] != 0) {
@@ -485,7 +502,8 @@ void mqtt_send() {
                             Serial.printf("%s %s\n",topic,json);
                             Serial.flush();
                             memset(tagdata[curr_tag],0,sizeof(tagdata[curr_tag]));
-                            lastpublish = time(NULL);                    
+                            lastpublish = time(NULL);
+                            published = true;                 
                         } else { 
                             set_led(51,0,0);
                             Serial.print("Failed to publish MQTT, rc=");
@@ -504,6 +522,8 @@ void mqtt_send() {
         memset(json,0,sizeof(json));
         delay(100);
     }
+    // If we published something, disconnect the client here to clean session.
+    if (published) client.disconnect();
     set_led(0,0,0);
 }
 /* ------------------------------------------------------------------------------- */
@@ -616,6 +636,11 @@ void httpWifi() {
         file.readBytesUntil('\n', myhostname, sizeof(myhostname));
         file.close();
     }
+
+    // https://github.com/espressif/arduino-esp32/issues/2537#issuecomment-508558849
+    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+    WiFi.setHostname(myhostname);
+
     html.replace("###TABLEROWS###", tablerows);
     html.replace("###COUNTER###", String(counter));
     html.replace("###MYHOSTNAME###", String(myhostname));
