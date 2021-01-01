@@ -32,6 +32,8 @@ and [OH2MP ESP32 Ruuvicollector](https://github.com/oh2mp/esp32_ruuvicollector)
 - [Arduino IDE](https://www.arduino.cc/en/main/software)
 - [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin/)
 
+You must install also _PubSubClient and ESP32_BLE_Arduino_ from Arduino library manager.
+
 Choose correct ESP32 board and change partitioning setting:<br /> **Tools -> Partition Scheme -> Huge APP(3MB No OTA)**
 
 Use the filesystem uploader tool to upload the contents of data library. It contains the html pages for

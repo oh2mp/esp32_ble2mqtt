@@ -1,5 +1,12 @@
 ChangeLog for OH2MP ESP32 BLE2MQTT
 
+2021-01-01
+	- Added RSSI to the data
+	- Added last half to the MAC address to concat to the default hostname
+	- Now the MQTT client disconnects nicely
+	- Added watchdog
+	- The unit tells desired hostname in DHCP request
+
 2020-12-22
 	- Initial release
 

@@ -5,7 +5,6 @@
  *
  */
 
-#include <FreeRTOS.h>
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
@@ -53,12 +52,11 @@ uint8_t tagcount = 0;            // total amount of known tags
 uint8_t scanning = 0;            // flag for scantime
 int interval = 1;
 time_t lastpublish = 0;
+hw_timer_t *timer = NULL;        // for watchdog
 
 // Default hostname base. Last 3 octets of MAC are added as hex.
 // The hostname can be changed explicitly from the portal.
 char myhostname[64] = "esp32-ble2mqtt-";
-
-TaskHandle_t mqtttask = NULL;
 
 // placeholder values
 char topicbase[256] = "sensors";
@@ -306,6 +304,12 @@ void led_fx() {
     }
 }
 /* ------------------------------------------------------------------------------- */
+// This happens if watchdog timer is triggered. See the end of the setup() function.
+void IRAM_ATTR reset_esp32() {
+    ets_printf("Alarm. Reboot\n");
+    esp_restart();
+}
+/* ------------------------------------------------------------------------------- */
 void setup() {
     Serial.begin(115200);
     Serial.println("\n\nESP32 BLE2MQTT");
@@ -361,12 +365,22 @@ void setup() {
     timeval epoch = {0, 0};
     const timeval *tv = &epoch;
     settimeofday(tv, NULL);
+
+    // Prepare watchdog
+    timer = timerBegin(0, 80, true);
+    timerAttachInterrupt(timer, &reset_esp32, true);
+    if (interval > 0) {
+        timerAlarmWrite(timer, interval*180E+6 + 15E+6, false); // set time to 3x interval (µs) +15s
+    } else {
+        timerAlarmWrite(timer, 195E+6, false);                  // if interval < 1, set it to 3m 15s
+    }
+    timerAlarmEnable(timer);
 }
 
 /* ------------------------------------------------------------------------------- */
 void loop() {
     uint8_t do_send = 0;
-    
+
     if (portal_timer == 0) {
         if (time(NULL) == 0 || interval == 0) do_send = 1;
         if (interval > 0) {
@@ -503,6 +517,7 @@ void mqtt_send() {
                     if (client.connect(myhostname,mqtt_user,mqtt_pass)) {
                         if (client.publish(topic, json)) {
                             set_led(0,128,0);
+                            timerWrite(timer, 0); //reset timer (feed watchdog)
                             Serial.printf("%s %s\n",topic,json);
                             Serial.flush();
                             memset(tagdata[curr_tag],0,sizeof(tagdata[curr_tag]));
@@ -543,6 +558,7 @@ void startPortal() {
    
     Serial.print("Starting portal...");
     portal_timer = millis();
+    timerWrite(timer, 0);
     
     for (uint8_t i = 0; i < MAX_TAGS; i++) {
         memset(heardtags[i],0,sizeof(heardtags[i]));
@@ -563,7 +579,8 @@ void startPortal() {
     set_led(0,0,0);
         
     portal_timer = millis();
-
+    timerWrite(timer, 0);
+    
     WiFi.disconnect();
     delay(100);
     WiFi.mode(WIFI_AP);
@@ -592,6 +609,7 @@ void startPortal() {
 
 void httpRoot() {
     portal_timer = millis();
+    timerWrite(timer, 0);
     String html;
 
     file = SPIFFS.open("/index.html", "r");
@@ -612,6 +630,8 @@ void httpWifi() {
     int counter = 0;
     
     portal_timer = millis();
+    timerWrite(timer, 0);
+    
     memset(tablerows, '\0', sizeof(tablerows));
     
     file = SPIFFS.open("/wifis.html", "r");
@@ -655,6 +675,7 @@ void httpWifi() {
 
 void httpSaveWifi() {
     portal_timer = millis();
+    timerWrite(timer, 0);
     String html;
         
     file = SPIFFS.open("/known_wifis.txt", "w");
@@ -694,6 +715,7 @@ void httpSaveWifi() {
 
 void httpMQTT() {
     portal_timer = millis();
+    timerWrite(timer, 0);
     String html;
     
     file = SPIFFS.open("/mqtt.html", "r");
@@ -710,6 +732,7 @@ void httpMQTT() {
 /* ------------------------------------------------------------------------------- */
 void httpSaveMQTT() {
     portal_timer = millis();
+    timerWrite(timer, 0);
     String html;
 
     file = SPIFFS.open("/mqtt.txt", "w");
@@ -736,7 +759,8 @@ void httpSensors() {
     int counter = 0;
 
     portal_timer = millis();
-
+    timerWrite(timer, 0);
+    
     file = SPIFFS.open("/sensors.html", "r");
     html = file.readString();
     file.close();
@@ -795,6 +819,7 @@ void httpSensors() {
 
 void httpSaveSensors() {
     portal_timer = millis();
+    timerWrite(timer, 0);
     String html;
         
     file = SPIFFS.open("/known_tags.txt", "w");
@@ -821,6 +846,7 @@ void httpSaveSensors() {
 
 void httpStyle() {
     portal_timer = millis();
+    timerWrite(timer, 0);
     String css;
 
     file = SPIFFS.open("/style.css", "r");
@@ -832,6 +858,7 @@ void httpStyle() {
 /* ------------------------------------------------------------------------------- */
 void httpBoot() {
     portal_timer = millis();
+    timerWrite(timer, 0);
     String html;
     
     file = SPIFFS.open("/ok.html", "r");
