@@ -1,5 +1,8 @@
 ChangeLog for OH2MP ESP32 BLE2MQTT
 
+2021-01-17
+	- Fixed bootlooping if config files were unexistent. Should start portal automatically in that case.
+
 2021-01-01
 	- Added RSSI to the data
 	- Added last half to the MAC address to concat to the default hostname
