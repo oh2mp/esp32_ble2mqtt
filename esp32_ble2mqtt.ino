@@ -542,7 +542,7 @@ void mqtt_send() {
                         }
                     } else {
                         set_led(51, 0, 0);
-                        Serial.printf("Failed to connect MQTT broker, state=%d", client.state());
+                        Serial.printf("Failed to connect MQTT broker, state=%d\n", client.state());
                     }
                 } else {
                     set_led(128, 0, 0);
@@ -638,7 +638,7 @@ void httpWifi() {
     char tablerows[1024];
     char rowbuf[256];
     char ssid[33];
-    char pass[33];
+    char pass[64];
     int counter = 0;
 
     portal_timer = millis();
@@ -660,7 +660,7 @@ void httpWifi() {
             file.readBytesUntil('\n', pass, 33);
             sprintf(rowbuf, "<tr><td>SSID</td><td><input type=\"text\" name=\"ssid%d\" maxlength=\"32\" value=\"%s\"></td></tr>", counter, ssid);
             strcat(tablerows, rowbuf);
-            sprintf(rowbuf, "<tr><td>PASS</td><td><input type=\"text\" name=\"pass%d\" maxlength=\"32\" value=\"%s\"></td></tr>", counter, pass);
+            sprintf(rowbuf, "<tr><td>PASS</td><td><input type=\"text\" name=\"pass%d\" maxlength=\"63\" value=\"%s\"></td></tr>", counter, pass);
             strcat(tablerows, rowbuf);
             counter++;
         }
