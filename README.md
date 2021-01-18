@@ -68,7 +68,7 @@ shows a short color effect to see that it's working. Colors and meanings in oper
 The LED pins are configurable from `#define` rows. The defaults are 21 red, 22 green and 23 blue.
 Every one should be connected with a eg. 1kΩ resistor.
 
-_TIP:_ connect an LDR to the cathode side of the LED. Then it will illuminate brighly in daylight
+__TIP:__ connect an LDR to the cathode side of the LED. Then it will illuminate brighly in daylight
 but will be dimmed in dark. 
 
 ------
