@@ -38,8 +38,9 @@
 #define TAG_ENERGY 3
 #define TAG_WATER  4
 #define TAG_THCPL  5
+#define TAG_DS1820 6
 
-const char type_name[6][8] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple"};
+const char type_name[7][8] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20"};
 // end of tag type enumerations and names
 
 char tagdata[MAX_TAGS][32];      // space for raw tag data unparsed
@@ -114,6 +115,7 @@ uint8_t tagTypeFromPayload(const uint8_t *payload, const uint8_t *mac) {
         if (memcmp(payload + 5, "\xE5\x02\xDC\xAC", 4) == 0)  return TAG_ENERGY;
         if (memcmp(payload + 5, "\xE5\x02\x48\xE9", 4) == 0)  return TAG_WATER;
         if (memcmp(payload + 5, "\xE5\x02\x13\x1A", 4) == 0)  return TAG_THCPL;
+        if (memcmp(payload + 5, "\xE5\x02\x20\x18", 4) == 0)  return TAG_DS1820;
     }
     // ATC_MiThermometer? The data should contain 10161a18 in the beginning and mac at offset 4.
     if (memcmp(payload, "\x10\x16\x1A\x18", 4) == 0 && memcmp(mac, payload + 4, 6) == 0) return TAG_MIJIA;
@@ -504,13 +506,21 @@ void mqtt_send() {
             if (tagtype[curr_tag] == TAG_MIJIA) {
                 if (tagdata[curr_tag][0] != 0) {
                     temperature = ((short)tagdata[curr_tag][10] << 8) | (unsigned short)tagdata[curr_tag][11];
-                    // sprintf(json,"%.1f\x29",temperature*0.1); // 0x29 = degree sign in the bigfont
                     humidity = (unsigned short)tagdata[curr_tag][12];
                     voltage = ((short)tagdata[curr_tag][14] << 8) | (unsigned short)tagdata[curr_tag][15];
                     sprintf(json, "{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"s\":%d}",
                             tagtype[curr_tag], int(temperature), int(humidity), int(voltage), abs(tagrssi[curr_tag]));
                 }
             }
+            // esp32 + ds1820 beacon
+            if (tagtype[curr_tag] == TAG_DS1820) {
+                if (tagdata[curr_tag][0] != 0) {
+                    temperature = ((short)tagdata[curr_tag][10] << 8) | (unsigned short)tagdata[curr_tag][9];
+                    sprintf(json, "{\"type\":%d,\"t\":%d,\"s\":%d}",
+                            tagtype[curr_tag], int(temperature), abs(tagrssi[curr_tag]));
+                }
+            }
+
             if (json[0] != 0) {
                 memset(topic, 0, sizeof(topic));
                 sprintf(topic, "%s/%s", topicbase, tagname[curr_tag]);
