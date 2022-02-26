@@ -43,6 +43,7 @@ These field names are chosen so that they are short to make messages more compac
 | p          | mW      | electric power |
 | m          | g       | mass (or weight in spoken language) |
 | s          | dBm     | signal strength as RSSI, abs() value.
+| tt         | 1/10°C  | thermostat target temperature in deciCelsius
 
 --------------
 
