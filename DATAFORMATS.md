@@ -20,6 +20,7 @@ supported at the moment are:
 | TAG_DS1820  | 6 | 1wire DS18x20 based thermometer |
 | TAG_DHT     | 7 | DHT based thermometer/hygrometer |
 | TAG_WATTSON | 8 | Diy Kyoto Wattson with ESP8266 |
+| TAG_MOPEKA  | 9 | Mopeka✓ gas tank sensors |
 
 These same numbers are used internally in [OH2MP Smart RV](https://github.com/oh2mp/esp32_smart_rv)
 
