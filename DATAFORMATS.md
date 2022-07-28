@@ -58,6 +58,8 @@ These field names are chosen so that they are short to make messages more compac
 Here we see that type is 1 meaning that this is a Ruuvi tag. The temperature is 24.3°C, relative humidity 32%,
 battery voltage 2.821 volts and athmospheric pressure 1003 hPa. RSSI is -42 dBm.
 
+--------------
+
 <a name="about_mopeka">
 
 ### About Mopeka✓
