@@ -43,8 +43,9 @@ These field names are chosen so that they are short to make messages more compac
 | i          | mA      | electric current |
 | p          | mW      | electric power |
 | m          | g       | mass (or weight in spoken language) |
-| s          | dBm     | signal strength as RSSI, abs() value.
-| tt         | 1/10°C  | thermostat target temperature in deciCelsius
+| s          | dBm     | signal strength as RSSI, abs() value. |
+| tt         | 1/10°C  | thermostat target temperature in deciCelsius |
+| gh         | cm      | LPG level height in gas tank (see [About Mopeka✓](#about_mopeka)) |
 
 --------------
 
@@ -56,3 +57,13 @@ These field names are chosen so that they are short to make messages more compac
 
 Here we see that type is 1 meaning that this is a Ruuvi tag. The temperature is 24.3°C, relative humidity 32%,
 battery voltage 2.821 volts and athmospheric pressure 1003 hPa. RSSI is -42 dBm.
+
+<a name="about_mopeka">
+### About Mopeka✓
+
+[Mopeka✓ sensors](https://www.mopeka.com/product-category/sensor/) are a family of gas tank level sensors
+that are mounted in the bottom of gas tanks. They use ultrasound on measuring the distance to the surface 
+of the liquified gas in the container. The exact amount of gas depends mostly on geometry of the container
+but also gas composition and temperature affect a little. That kind of calculations should be done elsewhere 
+than in this gateway, eg. in Grafana. It's best to just store the centimeters as-is.
+
