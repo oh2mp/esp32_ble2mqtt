@@ -33,14 +33,17 @@
 #define MAX_TAGS 16
 
 // Tag type enumerations and names
-#define TAG_RUUVI  1
-#define TAG_MIJIA  2
-#define TAG_ENERGY 3
-#define TAG_WATER  4
-#define TAG_THCPL  5
-#define TAG_DS1820 6
+#define TAG_RUUVI   1
+#define TAG_MIJIA   2
+#define TAG_ENERGY  3
+#define TAG_WATER   4
+#define TAG_THCPL   5
+#define TAG_DS1820  6
+#define TAG_DHT     7
+#define TAG_WATTSON 8
+#define TAG_MOPEKA  9
 
-const char type_name[7][8] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20"};
+const char type_name[10][9] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20", "DHTxx", "Wattson", "Mopeka\u2713"};
 // end of tag type enumerations and names
 
 char tagdata[MAX_TAGS][32];      // space for raw tag data unparsed
