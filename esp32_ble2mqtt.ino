@@ -43,7 +43,7 @@
 #define TAG_WATTSON 8
 #define TAG_MOPEKA  9
 
-const char type_name[10][9] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20", "DHTxx", "Wattson", "Mopeka\u2713"};
+const char type_name[10][10] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20", "DHTxx", "Wattson", "Mopeka\u2713"};
 // end of tag type enumerations and names
 
 char tagdata[MAX_TAGS][32];      // space for raw tag data unparsed
@@ -122,7 +122,9 @@ uint8_t tagTypeFromPayload(const uint8_t *payload, const uint8_t *mac) {
     }
     // ATC_MiThermometer? The data should contain 10161a18 in the beginning and mac at offset 4.
     if (memcmp(payload, "\x10\x16\x1A\x18", 4) == 0 && memcmp(mac, payload + 4, 6) == 0) return TAG_MIJIA;
-
+    // Mopeka gas tank sensor?
+    if (memcmp(payload, "\x1A\xFF\x0D\x00", 4) == 0 && payload[26] == mac[5]) return TAG_MOPEKA;
+    
     return 0xFF; // unknown
 }
 
@@ -522,6 +524,16 @@ void mqtt_send() {
                     sprintf(json, "{\"type\":%d,\"t\":%d,\"s\":%d}",
                             tagtype[curr_tag], int(temperature), abs(tagrssi[curr_tag]));
                 }
+            }
+            // Mopeka gas tank sensor
+            if (tagtype[curr_tag] == TAG_MOPEKA) {
+                // This algorithm has been got from Mopeka Products, LLC.
+                uint8_t level = 0x35;
+                for (uint8_t i = 8; i < 27; i++) {
+                    level ^= tagdata[curr_tag][i];
+                }
+                sprintf(json, "{\"type\":%d,\"gh\":%d,\"s\":%d}",
+                        tagtype[curr_tag], int(level*.762), abs(tagrssi[curr_tag]));
             }
 
             if (json[0] != 0) {
