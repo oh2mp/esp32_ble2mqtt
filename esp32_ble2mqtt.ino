@@ -532,8 +532,9 @@ void mqtt_send() {
                 for (uint8_t i = 8; i < 27; i++) {
                     level ^= tagdata[curr_tag][i];
                 }
-                sprintf(json, "{\"type\":%d,\"gh\":%d,\"s\":%d}",
-                        tagtype[curr_tag], int(level*.762), abs(tagrssi[curr_tag]));
+                voltage = int(((float)tagdata[curr_tag][6] / 256.0f * 2.0f + 1.5f)*1000); // Mopeka specification
+                sprintf(json, "{\"type\":%d,\"gh\":%d,\"s\":%d,\"bu\":%d}",
+                        tagtype[curr_tag], int(level*.762), abs(tagrssi[curr_tag]),voltage);
             }
 
             if (json[0] != 0) {
