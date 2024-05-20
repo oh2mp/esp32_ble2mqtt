@@ -21,6 +21,7 @@ supported at the moment are:
 | TAG_DHT     | 7 | DHT based thermometer/hygrometer |
 | TAG_WATTSON | 8 | Diy Kyoto Wattson with ESP8266 |
 | TAG_MOPEKA  | 9 | Mopeka✓ gas tank sensors |
+| TAG_IBSTH2 | 10 | Inkbird IBS-TH2 temperature sensor |
 
 These same numbers are used internally in [OH2MP Smart RV](https://github.com/oh2mp/esp32_smart_rv)
 
