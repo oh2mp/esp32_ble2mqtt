@@ -17,6 +17,7 @@ BLE beacons that are currently supported:
 
 - [Ruuvi tag](https://ruuvi.com/) (Data format V5 aka RAWv2 only)
 - [Xiaomi Mijia Bluetooth Thermometer 2 with ATC_MiThermometr firmware](https://github.com/atc1441/ATC_MiThermometer) (stock firmware not supported)
+- [Inkbird IBS-TH2](https://inkbird.com/products/ibs-th2-temp) (version without humidity and external sensor)
 - [Mopeka✓ gas tank sensor](https://www.mopeka.com/product-category/sensor/)
 - [ESP32 Water sensor](https://github.com/oh2mp/esp32_watersensor)
 - [ESP32 Energy meter](https://github.com/oh2mp/esp32_energymeter)
@@ -31,25 +32,34 @@ and [OH2MP ESP32 Ruuvicollector](https://github.com/oh2mp/esp32_ruuvicollector)
 ## Software prerequisities
 
 - Some MQTT broker like Mosquitto running somewhere.
-- [Arduino IDE](https://www.arduino.cc/en/main/software)
-- [Arduino ESP32 filesystem uploader](https://github.com/me-no-dev/arduino-esp32fs-plugin/)
+- [Arduino IDE](https://www.arduino.cc/en/main/software) __The current tested IDE version is 2.3.2__
+- [Arduino LITTLEFS uploader)](https://github.com/earlephilhower/arduino-littlefs-upload)
 
-You must install also __PubSubClient__ and __ESP32_BLE_Arduino__ from Arduino library manager.
+### Libraries needed
+
+Install these from the IDE library manager. I have added the versions which have tested and confirmed to be working.
+
+- EspMQTTClient 1.13.3
+- LittleFS_esp32 1.0.6 (1.0.7 is buggy)
+- PubSubClient 2.8
+
+## Installation and configuration
 
 Choose correct ESP32 board and change partitioning setting:<br /> **Tools -> Partition Scheme -> Huge APP(3MB No OTA)**
 
-Use the filesystem uploader tool to upload the contents of data library. It contains the html pages for
-the configuring portal.
+You can use the filesystem uploader tool to upload the contents of data library. It contains the html pages for
+the configuring portal. Or you can just upload the provided image with esptool:
+
+`esptool --chip esp32 --port /dev/ttyUSB0 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 3211264 esp32_ble2mqtt.littlefs.bin`
 
 By default the software assumes that there are maximum 16 beacons or tags, but this can be changed from the code,
 see row `#define MAX_TAGS 16`
 
-
 ## Configuration option
 
-The portal saves all configurations onto the SPIFFS filesystem. They are just text files, so you can
+The portal saves all configurations onto the LITTLEFS filesystem. They are just text files, so you can
 precreate them and then your ESP32 Ruuvi Collector is preconfigured and you dont' have to use the portal
-at all. Just place yout configuration files into the data directory along the html files and 
+at all. Just place yout configuration files into the data/littlefs directory along the html files and 
 upload them with ESP filesystem uploader.
 
 See [FORMATS.md](FORMATS.md).

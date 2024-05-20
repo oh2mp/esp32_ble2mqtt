@@ -36,6 +36,7 @@ These field names are chosen so that they are short to make messages more compac
 | rh         | %       | relative humidity |
 | ap         | hPa     | athmospheric pressure |
 | bu         | mV      | battery voltage |
+| bp         | %       | battery percentage |
 | e          | Wh      | energy consumption since last reset |
 | et         | Wh      | energy consumption total |
 | lv         | liter   | liquid volume |

@@ -1,0 +1,4 @@
+mqtt.pikarinen.com:1883
+nmm-509:g0atse42
+ble2mqtt/nmm-509
+1

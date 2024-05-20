@@ -9,7 +9,8 @@
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <WebServer.h>
-#include <SPIFFS.h>
+#include "FS.h"
+#include <LITTLEFS.h>
 #include <time.h>
 
 #include <BLEDevice.h>
@@ -18,6 +19,8 @@
 #include <BLEAdvertisedDevice.h>
 
 #include <PubSubClient.h>
+
+// #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 
 #define BUTTON 0                 // Push button for starting portal mode. On devkit this is BOOT button.
 #define APTIMEOUT 120000         // Portal timeout. Reboot after ms if no activity.
@@ -42,8 +45,9 @@
 #define TAG_DHT     7
 #define TAG_WATTSON 8
 #define TAG_MOPEKA  9
+#define TAG_IBSTH2  10
 
-const char type_name[10][10] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20", "DHTxx", "Wattson", "Mopeka\u2713"};
+const char type_name[11][10] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20", "DHTxx", "Wattson", "Mopeka\u2713", "IBS-TH2"};
 // end of tag type enumerations and names
 
 char tagdata[MAX_TAGS][32];      // space for raw tag data unparsed
@@ -150,6 +154,15 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
                 uint8_t mac[6];
                 tagtype[taginx] = tagTypeFromPayload(payload, mac);
             }
+            // Inkbird IBS-TH2?
+            if (tagtype[taginx] == 0xFF) {
+                if (advDev.haveServiceUUID()) {
+                    if (strcmp(advDev.getServiceUUID().toString().c_str(), "0000fff0-0000-1000-8000-00805f9b34fb") == 0) {
+                        tagtype[taginx] = TAG_IBSTH2;
+                    }
+                }
+            }
+
             // Copy the payload to tagdata
             memcpy(tagdata[taginx], payload, 32);
 
@@ -192,6 +205,15 @@ class ScannedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
             memcpy(mac, advDev.getAddress().getNative(), 6);
             uint8_t htype = tagTypeFromPayload(payload, mac);
 
+            // Check if this is Inkbird IBS-TH2
+            if (htype == 0xFF) {
+                if (advDev.haveServiceUUID()) {
+                    if (strcmp(advDev.getServiceUUID().toString().c_str(), "0000fff0-0000-1000-8000-00805f9b34fb") == 0) {
+                        htype = TAG_IBSTH2;
+                    }
+                }
+            }
+
             if (htype != 0xFF && htype != 0) {
                 for (uint8_t i = 0; i < MAX_TAGS; i++) {
                     if (strlen(heardtags[i]) == 0) {
@@ -210,11 +232,11 @@ class ScannedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 /* ------------------------------------------------------------------------------- */
 void loadWifis() {
-    if (SPIFFS.exists("/known_wifis.txt")) {
+    if (LITTLEFS.exists("/littlefs/known_wifis.txt")) {
         char ssid[33];
         char pass[65];
 
-        file = SPIFFS.open("/known_wifis.txt", "r");
+        file = LITTLEFS.open("/littlefs/known_wifis.txt", "r", false);
         while (file.available()) {
             memset(ssid, '\0', sizeof(ssid));
             memset(pass, '\0', sizeof(pass));
@@ -225,8 +247,8 @@ void loadWifis() {
         }
         file.close();
     }
-    if (SPIFFS.exists("/myhostname.txt")) {
-        file = SPIFFS.open("/myhostname.txt", "r");
+    if (LITTLEFS.exists("/littlefs/myhostname.txt")) {
+        file = LITTLEFS.open("/littlefs/myhostname.txt", "r", false);
         memset(myhostname, 0, sizeof(myhostname));
         file.readBytesUntil('\n', myhostname, sizeof(myhostname));
         file.close();
@@ -243,9 +265,9 @@ void loadSavedTags() {
         memset(tagdata[i], 0, sizeof(tagdata[i]));
     }
 
-    if (SPIFFS.exists("/known_tags.txt")) {
+    if (LITTLEFS.exists("/littlefs/known_tags.txt")) {
         uint8_t foo = 0;
-        file = SPIFFS.open("/known_tags.txt", "r");
+        file = LITTLEFS.open("/littlefs/known_tags.txt", "r", false);
         while (file.available()) {
             memset(sname, '\0', sizeof(sname));
             memset(smac, '\0', sizeof(smac));
@@ -266,7 +288,7 @@ void loadSavedTags() {
 }
 /* ------------------------------------------------------------------------------- */
 void loadMQTT() {
-    if (SPIFFS.exists("/mqtt.txt")) {
+    if (LITTLEFS.exists("/littlefs/mqtt.txt")) {
         char tmpstr[8];
         memset(tmpstr, 0, sizeof(tmpstr));
         memset(mqtt_host, 0, sizeof(mqtt_host));
@@ -274,7 +296,7 @@ void loadMQTT() {
         memset(mqtt_pass, 0, sizeof(mqtt_pass));
         memset(topicbase, 0, sizeof(topicbase));
 
-        file = SPIFFS.open("/mqtt.txt", "r");
+        file = LITTLEFS.open("/littlefs/mqtt.txt", "r", false);
         while (file.available()) {
             file.readBytesUntil(':', mqtt_host, sizeof(mqtt_host));
             file.readBytesUntil('\n', tmpstr, sizeof(tmpstr));
@@ -371,7 +393,7 @@ void setup() {
         tagtype[i] = 0;
     }
 
-    SPIFFS.begin();
+    LITTLEFS.begin(false, "/littlefs", 1);
     loadSavedTags();
     loadMQTT();
 
@@ -536,6 +558,19 @@ void mqtt_send() {
                 sprintf(json, "{\"type\":%d,\"gh\":%d,\"s\":%d,\"bu\":%d}",
                         tagtype[curr_tag], int(level*.762), abs(tagrssi[curr_tag]),voltage);
             }
+            // Inkbird IBS-TH2
+            if (tagtype[curr_tag] == TAG_IBSTH2) {
+                if (tagdata[curr_tag][0] != 0) {
+                    temperature = ((short)tagdata[curr_tag][15] << 8) | (unsigned short)tagdata[curr_tag][14];
+                    temperature = round(temperature/10);
+                    voltage = (short)tagdata[curr_tag][21]; // in Inkbird this is percentage, not voltage.
+                    sprintf(json, "{\"type\":%d,\"t\":%d,\"bp\":%d,\"s\":%d}",
+                            tagtype[curr_tag], int(temperature), voltage, abs(tagrssi[curr_tag]));
+                    if (memcmp(tagdata[curr_tag]+7, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 25) == 0) {
+                       json[0] = 0; // no valid data got, so set this tag to be skipped
+                    }
+                }
+            }
 
             if (json[0] != 0) {
                 memset(topic, 0, sizeof(topic));
@@ -650,7 +685,7 @@ void httpRoot() {
     timerWrite(timer, 0);
     String html;
 
-    file = SPIFFS.open("/index.html", "r");
+    file = LITTLEFS.open("/littlefs/index.html", "r", false);
     html = file.readString();
     file.close();
 
@@ -672,12 +707,12 @@ void httpWifi() {
 
     memset(tablerows, '\0', sizeof(tablerows));
 
-    file = SPIFFS.open("/wifis.html", "r");
+    file = LITTLEFS.open("/littlefs/wifis.html", "r", false);
     html = file.readString();
     file.close();
 
-    if (SPIFFS.exists("/known_wifis.txt")) {
-        file = SPIFFS.open("/known_wifis.txt", "r");
+    if (LITTLEFS.exists("/littlefs/known_wifis.txt")) {
+        file = LITTLEFS.open("/littlefs/known_wifis.txt", "r", false);
         while (file.available()) {
             memset(rowbuf, '\0', sizeof(rowbuf));
             memset(ssid, '\0', sizeof(ssid));
@@ -692,8 +727,8 @@ void httpWifi() {
         }
         file.close();
     }
-    if (SPIFFS.exists("/myhostname.txt")) {
-        file = SPIFFS.open("/myhostname.txt", "r");
+    if (LITTLEFS.exists("/littlefs/myhostname.txt")) {
+        file = LITTLEFS.open("/littlefs/myhostname.txt", "r", false);
         memset(myhostname, '\0', sizeof(myhostname));
         file.readBytesUntil('\n', myhostname, sizeof(myhostname));
         file.close();
@@ -716,7 +751,10 @@ void httpSaveWifi() {
     timerWrite(timer, 0);
     String html;
 
-    file = SPIFFS.open("/known_wifis.txt", "w");
+    file = LITTLEFS.open("/littlefs/known_wifis.txt", "w");
+    if (!file) {
+        Serial.println("Failed to open file for writing");
+    }
 
     for (int i = 0; i < server.arg("counter").toInt(); i++) {
         if (server.arg("ssid" + String(i)).length() > 0) {
@@ -736,13 +774,13 @@ void httpSaveWifi() {
     file.close();
 
     if (server.arg("myhostname").length() > 0) {
-        file = SPIFFS.open("/myhostname.txt", "w");
+        file = LITTLEFS.open("/littlefs/myhostname.txt", "w");
         file.print(server.arg("myhostname"));
         file.print("\n");
         file.close();
     }
 
-    file = SPIFFS.open("/ok.html", "r");
+    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
     html = file.readString();
     file.close();
 
@@ -756,7 +794,7 @@ void httpMQTT() {
     timerWrite(timer, 0);
     String html;
 
-    file = SPIFFS.open("/mqtt.html", "r");
+    file = LITTLEFS.open("/littlefs/mqtt.html", "r", false);
     html = file.readString();
     file.close();
 
@@ -773,7 +811,7 @@ void httpSaveMQTT() {
     timerWrite(timer, 0);
     String html;
 
-    file = SPIFFS.open("/mqtt.txt", "w");
+    file = LITTLEFS.open("/littlefs/mqtt.txt", "w");
     file.printf("%s\n", server.arg("hostport").c_str());
     file.printf("%s\n", server.arg("userpass").c_str());
     file.printf("%s\n", server.arg("topicbase").c_str());
@@ -781,7 +819,7 @@ void httpSaveMQTT() {
     file.close();
     loadMQTT(); // reread
 
-    file = SPIFFS.open("/ok.html", "r");
+    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
     html = file.readString();
     file.close();
 
@@ -799,7 +837,7 @@ void httpSensors() {
     portal_timer = millis();
     timerWrite(timer, 0);
 
-    file = SPIFFS.open("/sensors.html", "r");
+    file = LITTLEFS.open("/littlefs/sensors.html", "r", false);
     html = file.readString();
     file.close();
 
@@ -860,7 +898,7 @@ void httpSaveSensors() {
     timerWrite(timer, 0);
     String html;
 
-    file = SPIFFS.open("/known_tags.txt", "w");
+    file = LITTLEFS.open("/littlefs/known_tags.txt", "w");
 
     for (int i = 0; i < server.arg("counter").toInt(); i++) {
         if (server.arg("sname" + String(i)).length() > 0) {
@@ -873,7 +911,7 @@ void httpSaveSensors() {
     file.close();
     loadSavedTags(); // reread
 
-    file = SPIFFS.open("/ok.html", "r");
+    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
     html = file.readString();
     file.close();
 
@@ -887,7 +925,7 @@ void httpStyle() {
     timerWrite(timer, 0);
     String css;
 
-    file = SPIFFS.open("/style.css", "r");
+    file = LITTLEFS.open("/littlefs/style.css", "r", false);
     css = file.readString();
     file.close();
     server.send(200, "text/css", css);
@@ -899,7 +937,7 @@ void httpBoot() {
     timerWrite(timer, 0);
     String html;
 
-    file = SPIFFS.open("/ok.html", "r");
+    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
     html = file.readString();
     file.close();
 
