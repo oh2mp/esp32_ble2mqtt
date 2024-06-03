@@ -46,8 +46,9 @@
 #define TAG_WATTSON 8
 #define TAG_MOPEKA  9
 #define TAG_IBSTH2  10
+#define TAG_ALPICOOL 11
 
-const char type_name[11][10] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "TCouple", "DS18x20", "DHTxx", "Wattson", "Mopeka\u2713", "IBS-TH2"};
+const char type_name[12][10] PROGMEM = {"", "\u0550UUVi", "ATC_Mi", "Energy", "Water", "Flame", "DS18x20", "DHTxx", "Wattson", "Mopeka\u2713", "IBS-TH2", "Alpicool"};
 // end of tag type enumerations and names
 
 char tagdata[MAX_TAGS][32];      // space for raw tag data unparsed
@@ -61,6 +62,11 @@ uint8_t scanning = 0;            // flag for scantime
 int interval = 1;
 time_t lastpublish = 0;
 hw_timer_t *timer = NULL;        // for watchdog
+
+char gattcache[32];              // Space for caching GATT payload
+int clientnum = 0;
+int task_counter = 0;
+TaskHandle_t bletask = NULL;
 
 // Default hostname base. Last 3 octets of MAC are added as hex.
 // The hostname can be changed explicitly from the portal.
@@ -81,12 +87,21 @@ WebServer server(80);
 IPAddress apIP(192, 168, 4, 1);                  // portal ip address
 const char my_ssid[] PROGMEM = "ESP32 BLE2MQTT"; // AP SSID
 uint32_t portal_timer = 0;
+uint32_t ble_timer = 0;
+
+uint8_t alpicool_index = 0xFF;  // If we have an Alpicool, store its tag index here.
+bool alpicool_heard = false;    // Did we hear one on last iteration?
 
 char heardtags[MAX_TAGS][18];
 uint8_t heardtagtype[MAX_TAGS];
 
 File file;
 BLEScan* blescan;
+BLEScanResults foundDevices;
+BLEClient *pClient;
+BLERemoteService *pRemoteService;
+BLERemoteCharacteristic *rCharacteristic;
+BLERemoteCharacteristic *wCharacteristic;
 
 /* ------------------------------------------------------------------------------- */
 /* Get known tag index from MAC address. Format: 12:34:56:78:9a:bc */
@@ -124,6 +139,9 @@ uint8_t tagTypeFromPayload(const uint8_t *payload, const uint8_t *mac) {
         if (memcmp(payload + 5, "\xE5\x02\x13\x1A", 4) == 0)  return TAG_THCPL;
         if (memcmp(payload + 5, "\xE5\x02\x20\x18", 4) == 0)  return TAG_DS1820;
     }
+    // Alpicool fridge?
+    if (memcmp(payload, "\x02\x01\x06", 3) == 0 && memcmp(payload + 9, "ZHJIELI", 7) == 0) return TAG_ALPICOOL;
+
     // ATC_MiThermometer? The data should contain 10161a18 in the beginning and mac at offset 4.
     if (memcmp(payload, "\x10\x16\x1A\x18", 4) == 0 && memcmp(mac, payload + 4, 6) == 0) return TAG_MIJIA;
     // Mopeka gas tank sensor?
@@ -162,9 +180,18 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
                     }
                 }
             }
-
+            // ignore if payload doesn't contain valid data.
+            if (tagtype[taginx] == TAG_IBSTH2 &&
+                memcmp(payload+7, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 25) == 0) {
+                return;
+            }
             // Copy the payload to tagdata
             memcpy(tagdata[taginx], payload, 32);
+            if (tagtype[taginx] == TAG_ALPICOOL) {
+                memcpy(tagdata[taginx], gattcache, 32);
+                alpicool_index = taginx;
+                alpicool_heard = true;
+            }
 
             tagrssi[taginx] = advDev.getRSSI();
 
@@ -176,6 +203,33 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
             set_led(0, 0, 0);
         }
 };
+
+/* ------------------------------------------------------------------------------- */
+/*  Alpicool callback
+/* ------------------------------------------------------------------------------- */
+void alpicoolCallback(
+  BLERemoteCharacteristic* pBLERemoteCharacteristic,
+  uint8_t* pData,
+  size_t length,
+  bool isNotify) {
+
+    memset(gattcache,0,sizeof(gattcache));
+    memcpy(gattcache,pData,length);
+
+    short temperature = 0;
+    short wanted = 0;
+
+    temperature = (short)pData[18];
+    wanted = (short)pData[8];
+    Serial.print("Alpicool GATT payload=");
+    for (uint8_t i = 0; i < 32; i++) {
+        Serial.printf("%02x", pData[i]);
+    }
+    Serial.println("");
+    // Client must disconnect or otherwise eg. mobile app can't connect.
+    // These fridges can handle only one connection at a time.
+    pClient->disconnect();
+}
 
 /* ------------------------------------------------------------------------------- */
 /*  Find new devices when portal is started
@@ -396,9 +450,11 @@ void setup() {
     LITTLEFS.begin(false, "/littlefs", 1);
     loadSavedTags();
     loadMQTT();
+    memset(gattcache,0,sizeof(gattcache));
 
     BLEDevice::init("");
     blescan = BLEDevice::getScan();
+    pClient = BLEDevice::createClient();
 
     if (tagcount == 0) {
         startPortal();
@@ -415,6 +471,8 @@ void setup() {
         // https://github.com/espressif/arduino-esp32/issues/2537#issuecomment-508558849
         WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
         WiFi.setHostname(myhostname);
+
+        xTaskCreate(ble_task, "bletask", 4096, NULL, 1, &bletask);
     }
 }
 
@@ -431,27 +489,15 @@ void loop() {
             do_send = 0;
             startPortal();
         }
-        if (time(NULL) % 60 == 0) {
-            /*  Current official Ruuvi firmware (v 2.5.9) https://lab.ruuvi.com/dfu/ broadcasts
-                in every 6425ms in RAWv2 mode, so 11 seconds should be enough to hear all tags
-                unless you have really many.
-            */
-
-            set_led(0, 128, 128);
-            Serial.printf("Start scan at unixtime: %d\n", time(NULL));
-            BLEScanResults foundDevices = blescan->start(11, false);
-            blescan->clearResults();
-            set_led(128, 0, 128);
-            delay(250);
-            set_led(0, 0, 0);
-
-            /*  Something is wrong if zero known tags is heard, so then reboot.
-                Possible if all of them are out of range too, but that should not happen anyway.
-            */
-            if (foundDevices.getCount() == 0 && tagcount > 0) {
-                set_led(128, 0, 0);
-                ESP.restart();
-            }
+        if (millis() - ble_timer > 30000) {
+            Serial.println("Restart BLE task");
+            vTaskDelete(bletask);
+            pClient->disconnect();
+            clientnum++;
+            pClient = BLEDevice::createClient();
+            delay(10000);
+            ble_timer = millis();
+            xTaskCreate(ble_task, "bletask", 4096, NULL, 1, &bletask);
         }
     }
     if (do_send == 1) mqtt_send();
@@ -571,6 +617,14 @@ void mqtt_send() {
                     }
                 }
             }
+            if (tagtype[curr_tag] == TAG_ALPICOOL && alpicool_heard) {
+                if (tagdata[curr_tag][0] != 0) {
+                    temperature = (short)tagdata[curr_tag][18] * 10;
+                    voltage = int((float)tagdata[curr_tag][20] * 1000 + (float)tagdata[curr_tag][21] * 100);
+                    sprintf(json, "{\"type\":%d,\"t\":%d,\"tt\":%d,\"bu\":%d,\"s\":%d}",
+                            tagtype[curr_tag], int(temperature), (short)tagdata[curr_tag][8] * 10, voltage, abs(tagrssi[curr_tag]));  
+                }
+            }
 
             if (json[0] != 0) {
                 memset(topic, 0, sizeof(topic));
@@ -618,6 +672,59 @@ void mqtt_send() {
     if (published) client.disconnect();
     set_led(0, 0, 0);
 }
+
+/* ------------------------------------------------------------------------------- */
+/*
+    This task handles BLE scanning and possible GATT request to an Alpicool fridge
+*/
+void ble_task(void *parameter) {
+  //BLEScanResults foundDevices;
+  task_counter = 0;
+
+  while (1) {
+      ble_timer = millis();
+      alpicool_heard = false;
+
+      Serial.printf("============= start scan at %d seconds\n", int(millis()/1000));
+      foundDevices = blescan->start(11, false);
+      blescan->clearResults();
+      /*  Something is wrong if zero known tags is heard, so then reboot.
+          Possible if all of them are out of range too, but that should not happen anyway.
+      */
+      if (foundDevices.getCount() == 0 && tagcount > 0) ESP.restart();
+      Serial.printf("============= end scan\n");
+  
+      if (alpicool_index != 0xFF) {
+          if (alpicool_heard) {
+              if (!pClient->isConnected()) {
+                  Serial.println("Connecting to Alpicool fridge");
+                  pClient->connect(BLEAddress(tagmac[alpicool_index]));
+                  pClient->setMTU(32);
+                  pRemoteService = pClient->getService("00001234-0000-1000-8000-00805F9B34FB");
+                  rCharacteristic = pRemoteService->getCharacteristic("00001236-0000-1000-8000-00805F9B34FB");
+                  rCharacteristic->registerForNotify(alpicoolCallback);
+                  wCharacteristic = pRemoteService->getCharacteristic("00001235-0000-1000-8000-00805F9B34FB");
+              } else {
+                  Serial.println("Was already connected. Disconnect.");
+                  pClient->disconnect();
+                  wCharacteristic = nullptr;
+              }
+          }
+          // Send query request
+          // See: https://github.com/klightspeed/BrassMonkeyFridgeMonitor
+          if (wCharacteristic != nullptr && alpicool_heard) {
+              Serial.println("Sending query to Alpicool fridge: fefe03010200");
+              wCharacteristic->writeValue({0xfe, 0xfe, 3, 1, 2, 0}, 6);
+          }
+      }
+      Serial.printf("Clientnum %d, task iteration: %d, HEAP: %d\n", clientnum, task_counter++, ESP.getFreeHeap());
+
+      vTaskDelay(4000 / portTICK_PERIOD_MS);
+      pClient->disconnect(); // make sure
+      yield();
+  }  
+}
+
 /* ------------------------------------------------------------------------------- */
 /*  Portal code begins here
 
@@ -632,6 +739,8 @@ void startPortal() {
     Serial.print("Starting portal...");
     portal_timer = millis();
     timerWrite(timer, 0);
+    if (bletask != nullptr) vTaskDelete(bletask);
+    if (pClient->isConnected()) pClient->disconnect();
 
     for (uint8_t i = 0; i < MAX_TAGS; i++) {
         memset(heardtags[i], 0, sizeof(heardtags[i]));
