@@ -64,7 +64,6 @@ time_t lastpublish = 0;
 hw_timer_t *timer = NULL;        // for watchdog
 
 char gattcache[32];              // Space for caching GATT payload
-int clientnum = 0;
 int task_counter = 0;
 TaskHandle_t bletask = NULL;
 
@@ -489,15 +488,10 @@ void loop() {
             do_send = 0;
             startPortal();
         }
+        // Sometimes GATT client connecting hangs and in the library the timeout is something like 50 days. 
+        // We don't want to wait that long.
         if (millis() - ble_timer > 30000) {
-            Serial.println("Restart BLE task");
-            vTaskDelete(bletask);
-            pClient->disconnect();
-            clientnum++;
-            pClient = BLEDevice::createClient();
-            delay(10000);
-            ble_timer = millis();
-            xTaskCreate(ble_task, "bletask", 4096, NULL, 1, &bletask);
+            ESP.restart();
         }
     }
     if (do_send == 1) mqtt_send();
@@ -717,7 +711,7 @@ void ble_task(void *parameter) {
               wCharacteristic->writeValue({0xfe, 0xfe, 3, 1, 2, 0}, 6);
           }
       }
-      Serial.printf("Clientnum %d, task iteration: %d, HEAP: %d\n", clientnum, task_counter++, ESP.getFreeHeap());
+      Serial.printf("Task iteration: %d, HEAP: %d\n", task_counter++, ESP.getFreeHeap());
 
       vTaskDelay(4000 / portTICK_PERIOD_MS);
       pClient->disconnect(); // make sure
