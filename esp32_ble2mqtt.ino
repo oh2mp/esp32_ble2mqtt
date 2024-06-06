@@ -58,7 +58,6 @@ int  tagrssi[MAX_TAGS];          // RSSI for each tag
 
 uint8_t tagtype[MAX_TAGS];       // "cached" value for tag type
 uint8_t tagcount = 0;            // total amount of known tags
-uint8_t scanning = 0;            // flag for scantime
 int interval = 1;
 time_t lastpublish = 0;
 hw_timer_t *timer = NULL;        // for watchdog
@@ -90,6 +89,7 @@ uint32_t ble_timer = 0;
 
 uint8_t alpicool_index = 0xFF;  // If we have an Alpicool, store its tag index here.
 bool alpicool_heard = false;    // Did we hear one on last iteration?
+bool scanning = false;
 
 char heardtags[MAX_TAGS][18];
 uint8_t heardtagtype[MAX_TAGS];
@@ -166,24 +166,27 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
             memcpy(payload, advDev.getPayload(), 32);
             memset(tagdata[taginx], 0, sizeof(tagdata[taginx]));
 
+            // ignore if payload doesn't contain valid data.
+            if (memcmp(payload+7, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 25) == 0) {
+                return;
+            }
             // Don't we know the type of this device yet?
             if (tagtype[taginx] == 0) {
                 uint8_t mac[6];
                 tagtype[taginx] = tagTypeFromPayload(payload, mac);
             }
-            // Inkbird IBS-TH2?
+            // Inkbird IBS-TH2 or Alpicool?
             if (tagtype[taginx] == 0xFF) {
                 if (advDev.haveServiceUUID()) {
                     if (strcmp(advDev.getServiceUUID().toString().c_str(), "0000fff0-0000-1000-8000-00805f9b34fb") == 0) {
                         tagtype[taginx] = TAG_IBSTH2;
                     }
                 }
+                if (memcmp(payload, "\x02\x01\x06", 3) == 0 && memcmp(payload + 9, "ZHJIELI", 7) == 0) {
+                    tagtype[taginx] = TAG_ALPICOOL;
+                }
             }
-            // ignore if payload doesn't contain valid data.
-            if (tagtype[taginx] == TAG_IBSTH2 &&
-                memcmp(payload+7, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 25) == 0) {
-                return;
-            }
+
             // Copy the payload to tagdata
             memcpy(tagdata[taginx], payload, 32);
             if (tagtype[taginx] == TAG_ALPICOOL) {
@@ -413,7 +416,7 @@ void setup() {
     settimeofday(tv, NULL);
 
     // Prepare watchdog
-    timer = timerBegin(0, 80, true);
+    timer = timerBegin(0, 120, true);
     timerAttachInterrupt(timer, &reset_esp32, true);
     if (interval > 0) {
         timerAlarmWrite(timer, interval * 180E+6 + 15E+6, false); // set time to 3x interval (µs) +15s
@@ -490,11 +493,15 @@ void loop() {
         }
         // Sometimes GATT client connecting hangs and in the library the timeout is something like 50 days. 
         // We don't want to wait that long.
-        if (millis() - ble_timer > 30000) {
+        if (millis() - ble_timer > 60000) {
+            Serial.println("BLE looks to be hanged. Reboot.");
             ESP.restart();
         }
     }
-    if (do_send == 1) mqtt_send();
+    if (do_send == 1) {
+        while (scanning) delay(100);
+        mqtt_send();
+    }
 
     if (portal_timer > 0) {     // are we in portal mode?
         if (millis() % 500 < 250) {
@@ -680,6 +687,7 @@ void ble_task(void *parameter) {
       alpicool_heard = false;
 
       Serial.printf("============= start scan at %d seconds\n", int(millis()/1000));
+      scanning = true;
       foundDevices = blescan->start(11, false);
       blescan->clearResults();
       /*  Something is wrong if zero known tags is heard, so then reboot.
@@ -710,11 +718,13 @@ void ble_task(void *parameter) {
               Serial.println("Sending query to Alpicool fridge: fefe03010200");
               wCharacteristic->writeValue({0xfe, 0xfe, 3, 1, 2, 0}, 6);
           }
+          vTaskDelay(1000 / portTICK_PERIOD_MS); // give one second
+          pClient->disconnect();
       }
-      Serial.printf("Task iteration: %d, HEAP: %d\n", task_counter++, ESP.getFreeHeap());
+      scanning = false;
+      Serial.printf("Task iteration: %d, Free heap: %d\n", task_counter++, ESP.getFreeHeap());
 
-      vTaskDelay(4000 / portTICK_PERIOD_MS);
-      pClient->disconnect(); // make sure
+      vTaskDelay(30000 / portTICK_PERIOD_MS);
       yield();
   }  
 }
