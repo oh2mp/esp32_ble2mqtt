@@ -167,7 +167,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
             memset(tagdata[taginx], 0, sizeof(tagdata[taginx]));
 
             // ignore if payload doesn't contain valid data.
-            if (memcmp(payload+7, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 25) == 0) {
+            if (memcmp(payload+7, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 24) == 0) {
                 return;
             }
             // Don't we know the type of this device yet?
