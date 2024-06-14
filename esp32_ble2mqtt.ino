@@ -403,6 +403,7 @@ void IRAM_ATTR reset_esp32() {
     ets_printf("Alarm. Reboot\n");
     esp_restart();
 }
+
 /* ------------------------------------------------------------------------------- */
 void setup() {
     Serial.begin(115200);
@@ -416,7 +417,7 @@ void setup() {
     settimeofday(tv, NULL);
 
     // Prepare watchdog
-    timer = timerBegin(0, 120, true);
+    timer = timerBegin(0, 240, true);
     timerAttachInterrupt(timer, &reset_esp32, true);
     if (interval > 0) {
         timerAlarmWrite(timer, interval * 180E+6 + 15E+6, false); // set time to 3x interval (µs) +15s
@@ -669,8 +670,12 @@ void mqtt_send() {
         memset(json, 0, sizeof(json));
         delay(100);
     }
+    ble_timer = millis(); // prevent to get false timeout if sending MQTT took long time.
     // If we published something, disconnect the client here to clean session.
-    if (published) client.disconnect();
+    if (published) {
+        client.disconnect();
+        Serial.println("Sending MQTT complete");
+    }
     set_led(0, 0, 0);
 }
 
