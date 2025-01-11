@@ -417,14 +417,13 @@ void setup() {
     settimeofday(tv, NULL);
 
     // Prepare watchdog
-    timer = timerBegin(0, 240, true);
-    timerAttachInterrupt(timer, &reset_esp32, true);
+    timer = timerBegin(333333);
+    timerAttachInterrupt(timer, &reset_esp32);
     if (interval > 0) {
-        timerAlarmWrite(timer, interval * 180E+6 + 15E+6, false); // set time to 3x interval (µs) +15s
+        timerAlarm(timer, interval * 180E+6 + 15E+6, false , 0); // set time to 3x interval (µs) +15s
     } else {
-        timerAlarmWrite(timer, 195E+6, false);                  // if interval < 1, set it to 3m 15s
+        timerAlarm(timer, 195E+6, false, 0);                  // if interval < 1, set it to 3m 15s
     }
-    timerAlarmEnable(timer);
 
     // Append last 3 octets of MAC to the default hostname
     uint8_t mymac[6];
