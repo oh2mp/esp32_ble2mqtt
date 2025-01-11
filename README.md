@@ -41,7 +41,7 @@ and [OH2MP ESP32 Ruuvicollector](https://github.com/oh2mp/esp32_ruuvicollector)
 Install these from the IDE library manager. I have added the versions which have tested and confirmed to be working.
 
 - EspMQTTClient 1.13.3
-- LittleFS_esp32 1.0.6 (1.0.7 is buggy)
+- LittleFS_esp32 1.0.5 (1.0.6 won't compile, see https://github.com/lorol/LITTLEFS/issues/69)
 - PubSubClient 2.8
 
 ## Installation and configuration

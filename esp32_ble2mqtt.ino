@@ -18,6 +18,8 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 
+#include "esp_mac.h"
+
 #include <PubSubClient.h>
 
 // #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
@@ -96,7 +98,7 @@ uint8_t heardtagtype[MAX_TAGS];
 
 File file;
 BLEScan* blescan;
-BLEScanResults foundDevices;
+BLEScanResults* foundDevices;
 BLEClient *pClient;
 BLERemoteService *pRemoteService;
 BLERemoteCharacteristic *rCharacteristic;
@@ -417,28 +419,24 @@ void setup() {
     settimeofday(tv, NULL);
 
     // Prepare watchdog
-    timer = timerBegin(0, 240, true);
-    timerAttachInterrupt(timer, &reset_esp32, true);
+    timer = timerBegin(333333);
+    timerAttachInterrupt(timer, &reset_esp32);
     if (interval > 0) {
-        timerAlarmWrite(timer, interval * 180E+6 + 15E+6, false); // set time to 3x interval (µs) +15s
+        timerAlarm(timer, interval * 180E+6 + 15E+6, false , 0); // set time to 3x interval (µs) +15s
     } else {
-        timerAlarmWrite(timer, 195E+6, false);                  // if interval < 1, set it to 3m 15s
+        timerAlarm(timer, 195E+6, false, 0);                  // if interval < 1, set it to 3m 15s
     }
-    timerAlarmEnable(timer);
 
     // Append last 3 octets of MAC to the default hostname
     uint8_t mymac[6];
-    esp_read_mac(mymac, (esp_mac_type_t)0); // 0:wifi station, 1:wifi softap, 2:bluetooth, 3:ethernet
+    esp_read_mac(mymac, ESP_MAC_WIFI_STA); 
     char mac_end[8];
     sprintf(mac_end, "%02x%02x%02x", mymac[3], mymac[4], mymac[5]);
     strcat(myhostname, mac_end);
 
-    ledcSetup(LED_R, 5000, 8);
-    ledcAttachPin(LED_R_PIN, LED_R);
-    ledcSetup(LED_G, 5000, 8);
-    ledcAttachPin(LED_G_PIN, LED_G);
-    ledcSetup(LED_B, 5000, 8);
-    ledcAttachPin(LED_B_PIN, LED_B);
+    ledcAttachChannel(LED_R_PIN, 5000, 8, LED_R);
+    ledcAttachChannel(LED_G_PIN, 5000, 8, LED_G);
+    ledcAttachChannel(LED_B_PIN, 5000, 8, LED_B);
     led_fx();
     set_led(0, 0, 0);
 
@@ -684,7 +682,7 @@ void mqtt_send() {
     This task handles BLE scanning and possible GATT request to an Alpicool fridge
 */
 void ble_task(void *parameter) {
-  //BLEScanResults foundDevices;
+
   task_counter = 0;
 
   while (1) {
@@ -694,11 +692,11 @@ void ble_task(void *parameter) {
       Serial.printf("============= start scan at %d seconds\n", int(millis()/1000));
       scanning = true;
       foundDevices = blescan->start(11, false);
-      blescan->clearResults();
       /*  Something is wrong if zero known tags is heard, so then reboot.
           Possible if all of them are out of range too, but that should not happen anyway.
       */
-      if (foundDevices.getCount() == 0 && tagcount > 0) ESP.restart();
+      if (foundDevices->getCount() == 0 && tagcount > 0) ESP.restart();
+      blescan->clearResults();
       Serial.printf("============= end scan\n");
   
       if (alpicool_index != 0xFF) {
@@ -721,7 +719,8 @@ void ble_task(void *parameter) {
           // See: https://github.com/klightspeed/BrassMonkeyFridgeMonitor
           if (wCharacteristic != nullptr && alpicool_heard) {
               Serial.println("Sending query to Alpicool fridge: fefe03010200");
-              wCharacteristic->writeValue({0xfe, 0xfe, 3, 1, 2, 0}, 6);
+              uint8_t data[] = {0xfe, 0xfe, 3, 1, 2, 0};
+              wCharacteristic->writeValue(data, 6);
           }
           vTaskDelay(1000 / portTICK_PERIOD_MS); // give one second
           pClient->disconnect();
@@ -762,7 +761,7 @@ void startPortal() {
     blescan->setActiveScan(true);
     blescan->setInterval(100);
     blescan->setWindow(99);
-    BLEScanResults foundDevices = blescan->start(11, false);
+    BLEScanResults* foundDevices = blescan->start(11, false);
     blescan->stop();
     blescan->clearResults();
     blescan = NULL;
