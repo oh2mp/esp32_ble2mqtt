@@ -434,12 +434,9 @@ void setup() {
     sprintf(mac_end, "%02x%02x%02x", mymac[3], mymac[4], mymac[5]);
     strcat(myhostname, mac_end);
 
-    ledcSetup(LED_R, 5000, 8);
-    ledcAttachPin(LED_R_PIN, LED_R);
-    ledcSetup(LED_G, 5000, 8);
-    ledcAttachPin(LED_G_PIN, LED_G);
-    ledcSetup(LED_B, 5000, 8);
-    ledcAttachPin(LED_B_PIN, LED_B);
+    ledcAttachChannel(LED_R_PIN, 5000, 8, LED_R);
+    ledcAttachChannel(LED_G_PIN, 5000, 8, LED_G);
+    ledcAttachChannel(LED_B_PIN, 5000, 8, LED_B);
     led_fx();
     set_led(0, 0, 0);
 
