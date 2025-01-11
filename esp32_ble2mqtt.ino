@@ -98,7 +98,7 @@ uint8_t heardtagtype[MAX_TAGS];
 
 File file;
 BLEScan* blescan;
-BLEScanResults foundDevices;
+BLEScanResults* foundDevices;
 BLEClient *pClient;
 BLERemoteService *pRemoteService;
 BLERemoteCharacteristic *rCharacteristic;
@@ -682,7 +682,7 @@ void mqtt_send() {
     This task handles BLE scanning and possible GATT request to an Alpicool fridge
 */
 void ble_task(void *parameter) {
-  //BLEScanResults foundDevices;
+
   task_counter = 0;
 
   while (1) {
@@ -696,7 +696,7 @@ void ble_task(void *parameter) {
       /*  Something is wrong if zero known tags is heard, so then reboot.
           Possible if all of them are out of range too, but that should not happen anyway.
       */
-      if (foundDevices.getCount() == 0 && tagcount > 0) ESP.restart();
+      if (foundDevices->getCount() == 0 && tagcount > 0) ESP.restart();
       Serial.printf("============= end scan\n");
   
       if (alpicool_index != 0xFF) {
@@ -760,7 +760,7 @@ void startPortal() {
     blescan->setActiveScan(true);
     blescan->setInterval(100);
     blescan->setWindow(99);
-    BLEScanResults foundDevices = blescan->start(11, false);
+    BLEScanResults* foundDevices = blescan->start(11, false);
     blescan->stop();
     blescan->clearResults();
     blescan = NULL;
