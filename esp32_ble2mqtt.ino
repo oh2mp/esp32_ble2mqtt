@@ -719,7 +719,8 @@ void ble_task(void *parameter) {
           // See: https://github.com/klightspeed/BrassMonkeyFridgeMonitor
           if (wCharacteristic != nullptr && alpicool_heard) {
               Serial.println("Sending query to Alpicool fridge: fefe03010200");
-              wCharacteristic->writeValue({0xfe, 0xfe, 3, 1, 2, 0}, 6);
+              uint8_t data[] = {0xfe, 0xfe, 3, 1, 2, 0};
+              wCharacteristic->writeValue(data, 6);
           }
           vTaskDelay(1000 / portTICK_PERIOD_MS); // give one second
           pClient->disconnect();
