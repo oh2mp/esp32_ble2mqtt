@@ -18,6 +18,8 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 
+#include "esp_mac.h"
+
 #include <PubSubClient.h>
 
 // #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
@@ -427,7 +429,7 @@ void setup() {
 
     // Append last 3 octets of MAC to the default hostname
     uint8_t mymac[6];
-    esp_read_mac(mymac, (esp_mac_type_t)0); // 0:wifi station, 1:wifi softap, 2:bluetooth, 3:ethernet
+    esp_read_mac(mymac, ESP_MAC_WIFI_STA); 
     char mac_end[8];
     sprintf(mac_end, "%02x%02x%02x", mymac[3], mymac[4], mymac[5]);
     strcat(myhostname, mac_end);
