@@ -692,11 +692,11 @@ void ble_task(void *parameter) {
       Serial.printf("============= start scan at %d seconds\n", int(millis()/1000));
       scanning = true;
       foundDevices = blescan->start(11, false);
-      blescan->clearResults();
       /*  Something is wrong if zero known tags is heard, so then reboot.
           Possible if all of them are out of range too, but that should not happen anyway.
       */
       if (foundDevices->getCount() == 0 && tagcount > 0) ESP.restart();
+      blescan->clearResults();
       Serial.printf("============= end scan\n");
   
       if (alpicool_index != 0xFF) {
