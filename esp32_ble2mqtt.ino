@@ -9,8 +9,8 @@
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <WebServer.h>
-#include "FS.h"
-#include <LITTLEFS.h>
+//#include "FS.h"
+#include <LittleFS.h>
 #include <time.h>
 
 #include <BLEDevice.h>
@@ -20,7 +20,7 @@
 
 #include <PubSubClient.h>
 
-// #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
+// #define CONFIG_LittleFS_SPIFFS_COMPAT 1
 
 #define BUTTON 0                 // Push button for starting portal mode. On devkit this is BOOT button.
 #define APTIMEOUT 120000         // Portal timeout. Reboot after ms if no activity.
@@ -150,8 +150,8 @@ uint8_t tagTypeFromPayload(const uint8_t *payload, const uint8_t *mac) {
 }
 
 /* ------------------------------------------------------------------------------- */
-/*  Known devices callback
-    /* ------------------------------------------------------------------------------- */
+/*  Known devices callback                                                         */
+/* ------------------------------------------------------------------------------- */
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         void onResult(BLEAdvertisedDevice advDev) {
@@ -207,22 +207,13 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 };
 
 /* ------------------------------------------------------------------------------- */
-/*  Alpicool callback
+/*  Alpicool callback                                                              */
 /* ------------------------------------------------------------------------------- */
 void alpicoolCallback(
   BLERemoteCharacteristic* pBLERemoteCharacteristic,
   uint8_t* pData,
   size_t length,
   bool isNotify) {
-
-    memset(gattcache,0,sizeof(gattcache));
-    memcpy(gattcache,pData,length);
-
-    short temperature = 0;
-    short wanted = 0;
-
-    temperature = (short)pData[18];
-    wanted = (short)pData[8];
     Serial.print("Alpicool GATT payload=");
     for (uint8_t i = 0; i < 32; i++) {
         Serial.printf("%02x", pData[i]);
@@ -234,8 +225,8 @@ void alpicoolCallback(
 }
 
 /* ------------------------------------------------------------------------------- */
-/*  Find new devices when portal is started
-    /* ------------------------------------------------------------------------------- */
+/*  Find new devices when portal is started                                        */
+/* ------------------------------------------------------------------------------- */
 class ScannedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         void onResult(BLEAdvertisedDevice advDev) {
             set_led(0, 0, 128);
@@ -288,11 +279,11 @@ class ScannedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 /* ------------------------------------------------------------------------------- */
 void loadWifis() {
-    if (LITTLEFS.exists("/littlefs/known_wifis.txt")) {
+    if (LittleFS.exists("/LittleFS/known_wifis.txt")) {
         char ssid[33];
         char pass[65];
 
-        file = LITTLEFS.open("/littlefs/known_wifis.txt", "r", false);
+        file = LittleFS.open("/LittleFS/known_wifis.txt");
         while (file.available()) {
             memset(ssid, '\0', sizeof(ssid));
             memset(pass, '\0', sizeof(pass));
@@ -303,8 +294,8 @@ void loadWifis() {
         }
         file.close();
     }
-    if (LITTLEFS.exists("/littlefs/myhostname.txt")) {
-        file = LITTLEFS.open("/littlefs/myhostname.txt", "r", false);
+    if (LittleFS.exists("/LittleFS/myhostname.txt")) {
+        file = LittleFS.open("/LittleFS/myhostname.txt");
         memset(myhostname, 0, sizeof(myhostname));
         file.readBytesUntil('\n', myhostname, sizeof(myhostname));
         file.close();
@@ -321,9 +312,9 @@ void loadSavedTags() {
         memset(tagdata[i], 0, sizeof(tagdata[i]));
     }
 
-    if (LITTLEFS.exists("/littlefs/known_tags.txt")) {
+    if (LittleFS.exists("/LittleFS/known_tags.txt")) {
         uint8_t foo = 0;
-        file = LITTLEFS.open("/littlefs/known_tags.txt", "r", false);
+        file = LittleFS.open("/LittleFS/known_tags.txt");
         while (file.available()) {
             memset(sname, '\0', sizeof(sname));
             memset(smac, '\0', sizeof(smac));
@@ -344,7 +335,7 @@ void loadSavedTags() {
 }
 /* ------------------------------------------------------------------------------- */
 void loadMQTT() {
-    if (LITTLEFS.exists("/littlefs/mqtt.txt")) {
+    if (LittleFS.exists("/LittleFS/mqtt.txt")) {
         char tmpstr[8];
         memset(tmpstr, 0, sizeof(tmpstr));
         memset(mqtt_host, 0, sizeof(mqtt_host));
@@ -352,7 +343,7 @@ void loadMQTT() {
         memset(mqtt_pass, 0, sizeof(mqtt_pass));
         memset(topicbase, 0, sizeof(topicbase));
 
-        file = LITTLEFS.open("/littlefs/mqtt.txt", "r", false);
+        file = LittleFS.open("/LittleFS/mqtt.txt");
         while (file.available()) {
             file.readBytesUntil(':', mqtt_host, sizeof(mqtt_host));
             file.readBytesUntil('\n', tmpstr, sizeof(tmpstr));
@@ -450,7 +441,7 @@ void setup() {
         tagtype[i] = 0;
     }
 
-    LITTLEFS.begin(false, "/littlefs", 1);
+    LittleFS.begin(false, "/LittleFS", 1);
     loadSavedTags();
     loadMQTT();
     memset(gattcache,0,sizeof(gattcache));
@@ -803,7 +794,7 @@ void httpRoot() {
     timerWrite(timer, 0);
     String html;
 
-    file = LITTLEFS.open("/littlefs/index.html", "r", false);
+    file = LittleFS.open("/LittleFS/index.html");
     html = file.readString();
     file.close();
 
@@ -825,12 +816,12 @@ void httpWifi() {
 
     memset(tablerows, '\0', sizeof(tablerows));
 
-    file = LITTLEFS.open("/littlefs/wifis.html", "r", false);
+    file = LittleFS.open("/LittleFS/wifis.html");
     html = file.readString();
     file.close();
 
-    if (LITTLEFS.exists("/littlefs/known_wifis.txt")) {
-        file = LITTLEFS.open("/littlefs/known_wifis.txt", "r", false);
+    if (LittleFS.exists("/LittleFS/known_wifis.txt")) {
+        file = LittleFS.open("/LittleFS/known_wifis.txt");
         while (file.available()) {
             memset(rowbuf, '\0', sizeof(rowbuf));
             memset(ssid, '\0', sizeof(ssid));
@@ -845,8 +836,8 @@ void httpWifi() {
         }
         file.close();
     }
-    if (LITTLEFS.exists("/littlefs/myhostname.txt")) {
-        file = LITTLEFS.open("/littlefs/myhostname.txt", "r", false);
+    if (LittleFS.exists("/LittleFS/myhostname.txt")) {
+        file = LittleFS.open("/LittleFS/myhostname.txt");
         memset(myhostname, '\0', sizeof(myhostname));
         file.readBytesUntil('\n', myhostname, sizeof(myhostname));
         file.close();
@@ -869,7 +860,7 @@ void httpSaveWifi() {
     timerWrite(timer, 0);
     String html;
 
-    file = LITTLEFS.open("/littlefs/known_wifis.txt", "w");
+    file = LittleFS.open("/LittleFS/known_wifis.txt", "w");
     if (!file) {
         Serial.println("Failed to open file for writing");
     }
@@ -892,13 +883,13 @@ void httpSaveWifi() {
     file.close();
 
     if (server.arg("myhostname").length() > 0) {
-        file = LITTLEFS.open("/littlefs/myhostname.txt", "w");
+        file = LittleFS.open("/LittleFS/myhostname.txt", "w");
         file.print(server.arg("myhostname"));
         file.print("\n");
         file.close();
     }
 
-    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
+    file = LittleFS.open("/LittleFS/ok.html");
     html = file.readString();
     file.close();
 
@@ -912,7 +903,7 @@ void httpMQTT() {
     timerWrite(timer, 0);
     String html;
 
-    file = LITTLEFS.open("/littlefs/mqtt.html", "r", false);
+    file = LittleFS.open("/LittleFS/mqtt.html");
     html = file.readString();
     file.close();
 
@@ -929,7 +920,7 @@ void httpSaveMQTT() {
     timerWrite(timer, 0);
     String html;
 
-    file = LITTLEFS.open("/littlefs/mqtt.txt", "w");
+    file = LittleFS.open("/LittleFS/mqtt.txt", "w");
     file.printf("%s\n", server.arg("hostport").c_str());
     file.printf("%s\n", server.arg("userpass").c_str());
     file.printf("%s\n", server.arg("topicbase").c_str());
@@ -937,7 +928,7 @@ void httpSaveMQTT() {
     file.close();
     loadMQTT(); // reread
 
-    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
+    file = LittleFS.open("/LittleFS/ok.html");
     html = file.readString();
     file.close();
 
@@ -955,7 +946,7 @@ void httpSensors() {
     portal_timer = millis();
     timerWrite(timer, 0);
 
-    file = LITTLEFS.open("/littlefs/sensors.html", "r", false);
+    file = LittleFS.open("/LittleFS/sensors.html");
     html = file.readString();
     file.close();
 
@@ -1016,7 +1007,7 @@ void httpSaveSensors() {
     timerWrite(timer, 0);
     String html;
 
-    file = LITTLEFS.open("/littlefs/known_tags.txt", "w");
+    file = LittleFS.open("/LittleFS/known_tags.txt", "w");
 
     for (int i = 0; i < server.arg("counter").toInt(); i++) {
         if (server.arg("sname" + String(i)).length() > 0) {
@@ -1029,7 +1020,7 @@ void httpSaveSensors() {
     file.close();
     loadSavedTags(); // reread
 
-    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
+    file = LittleFS.open("/LittleFS/ok.html");
     html = file.readString();
     file.close();
 
@@ -1043,7 +1034,7 @@ void httpStyle() {
     timerWrite(timer, 0);
     String css;
 
-    file = LITTLEFS.open("/littlefs/style.css", "r", false);
+    file = LittleFS.open("/LittleFS/style.css");
     css = file.readString();
     file.close();
     server.send(200, "text/css", css);
@@ -1055,7 +1046,7 @@ void httpBoot() {
     timerWrite(timer, 0);
     String html;
 
-    file = LITTLEFS.open("/littlefs/ok.html", "r", false);
+    file = LittleFS.open("/LittleFS/ok.html");
     html = file.readString();
     file.close();
 
