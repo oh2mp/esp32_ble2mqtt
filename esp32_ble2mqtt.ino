@@ -9,7 +9,6 @@
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <WebServer.h>
-//#include "FS.h"
 #include <LittleFS.h>
 #include <time.h>
 
@@ -19,8 +18,6 @@
 #include <BLEAdvertisedDevice.h>
 
 #include <PubSubClient.h>
-
-// #define CONFIG_LittleFS_SPIFFS_COMPAT 1
 
 #define BUTTON 0                 // Push button for starting portal mode. On devkit this is BOOT button.
 #define APTIMEOUT 120000         // Portal timeout. Reboot after ms if no activity.
@@ -416,7 +413,6 @@ void setup() {
         timerAlarmWrite(timer, 195E+6, false);                  // if interval < 1, set it to 3m 15s
     }
     timerAlarmEnable(timer);
-
     // Append last 3 octets of MAC to the default hostname
     uint8_t mymac[6];
     esp_read_mac(mymac, (esp_mac_type_t)0); // 0:wifi station, 1:wifi softap, 2:bluetooth, 3:ethernet

@@ -33,10 +33,14 @@ and [OH2MP ESP32 Ruuvicollector](https://github.com/oh2mp/esp32_ruuvicollector)
 ## Software prerequisities
 
 - Some MQTT broker like Mosquitto running somewhere.
-- [Arduino IDE](https://www.arduino.cc/en/main/software) – __The current tested IDE version is 2.3.4__
+- [Arduino IDE](https://www.arduino.cc/en/main/software) – __The current tested IDE version is 2.3.6__
 - [Arduino LITTLEFS uploader](https://github.com/earlephilhower/arduino-littlefs-upload) – Optional if you use the ready made image
 
 ### Libraries needed
+
+__Make sure your esp32 board version installed is 2.0.x__
+
+This has been tested with version 2.0.17 (see Boards Manager in Arduino IDE)
 
 Install these from the IDE library manager. I have added the versions which have tested and confirmed to be working.
 
