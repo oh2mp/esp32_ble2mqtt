@@ -513,6 +513,7 @@ void mqtt_send() {
     char topic[512];
     short temperature = 0;
     unsigned short humidity;
+    unsigned short movement;
     unsigned short foo;
     int pressure;
     int voltage;
@@ -532,10 +533,11 @@ void mqtt_send() {
                     foo = ((unsigned short)tagdata[curr_tag][20] << 8) + (unsigned short)tagdata[curr_tag][21];
                     voltage = ((double)foo / 32  + 1600);
                     pressure = ((unsigned short)tagdata[curr_tag][12] << 8) + (unsigned short)tagdata[curr_tag][13] + 50000;
+                    movement = ((unsigned short)tagdata[curr_tag][22]);
 
-                    sprintf(json, "{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"ap\":%d,\"s\":%d}",
+                    sprintf(json, "{\"type\":%d,\"t\":%d,\"rh\":%d,\"bu\":%d,\"ap\":%d,\"s\":%d,\"mo\":%d}",
                             tagtype[curr_tag], int(temperature * .05), int((float)humidity * .0025),
-                            voltage, int(pressure / 100), abs(tagrssi[curr_tag]));
+                            voltage, int(pressure / 100), abs(tagrssi[curr_tag]), movement);
                 }
             }
             // Other tags --------------------------------------------------------------------------------------
